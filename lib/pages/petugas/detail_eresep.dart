@@ -1,5 +1,6 @@
-﻿// Halaman detail e-Resep — input jumlah obat, validasi stok, dan simpan
+// Halaman detail e-Resep — input jumlah obat, validasi stok, dan simpan
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/resep.dart';
 import '../../models/obat_apotek.dart';
@@ -9,7 +10,7 @@ import 'widgets/resep_terpilih_card.dart';
 import 'widgets/obat_card.dart';
 import 'widgets/eresep_bottom_actions.dart';
 import 'widgets/eresep_success_overlay.dart';
-import '../../services/service_obat.dart';
+import '../../providers/provider_obat.dart';
 
 // Widget detail e-Resep — proses pengambilan obat dari resep
 class DetailEResepPage extends StatefulWidget {
@@ -24,8 +25,6 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
   bool _berhasil = false;
   bool _isSaving = false;
   bool _siapTutupPopup = false;
-
-  final ObatService _obatService = ObatService();
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -45,26 +44,28 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
     return _jumlahFocusNodes.putIfAbsent(obat.idObat, () => FocusNode());
   }
 
+  late List<ObatApotek> _daftarObat;
+
   @override
   void initState() {
     super.initState();
+    // Populate _daftarObat dari provider agar stok dan nama selalu fresh
+    final obatProvider = context.read<ObatProvider>();
+    _daftarObat = obatProvider.obatList.map((o) => ObatApotek(
+      idObat: o.idObat,
+      namaObat: o.namaObat,
+      namaJenisObat: obatProvider.getJenisName(o.idJenisObat),
+      tanggalKadaluwarsa: o.tanggalKadaluwarsa,
+      stok: o.stok,
+      jumlahDiambil: 0,
+    )).toList();
+
     // Pre-create controllers untuk semua obat.
     for (final obat in _daftarObat) {
       _controllerFor(obat);
       _focusNodeFor(obat);
     }
   }
-
-  final List<ObatApotek> _daftarObat = [
-    ObatApotek(idObat: 1, namaObat: 'Cefadroxil 500mg', namaJenisObat: 'Antibiotik', tanggalKadaluwarsa: DateTime(2027, 5, 1), stok: 80),
-    ObatApotek(idObat: 2, namaObat: 'Mylanta Cair 50ml', namaJenisObat: 'Antasida', tanggalKadaluwarsa: DateTime(2026, 7, 7), stok: 45),
-    ObatApotek(idObat: 3, namaObat: 'Bodrex Migra', namaJenisObat: 'Analgesik', tanggalKadaluwarsa: DateTime(2026, 12, 15), stok: 65),
-    ObatApotek(idObat: 4, namaObat: 'Diapet', namaJenisObat: 'Antidiare', tanggalKadaluwarsa: DateTime(2026, 5, 25), stok: 80),
-    ObatApotek(idObat: 5, namaObat: 'Enervon-C', namaJenisObat: 'Suplemen', tanggalKadaluwarsa: DateTime(2027, 5, 25), stok: 150),
-    ObatApotek(idObat: 6, namaObat: 'Rohto Cool 7ml', namaJenisObat: 'Tetes Mata', tanggalKadaluwarsa: DateTime(2026, 6, 18), stok: 70),
-    ObatApotek(idObat: 7, namaObat: 'Siladex Antitussive', namaJenisObat: 'Batuk', tanggalKadaluwarsa: DateTime(2026, 9, 1), stok: 50),
-    ObatApotek(idObat: 8, namaObat: 'Sangobion', namaJenisObat: 'Suplemen', tanggalKadaluwarsa: DateTime(2027, 5, 1), stok: 50),
-  ];
 
   // â”€â”€ Search Logic (matchStart) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -332,36 +333,37 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
   Future<void> _eksekusiSimpan() async {
     setState(() => _isSaving = true);
 
-    // Snapshot stok asli sebelum diubah
-    final stokAsli = <int, int>{
-      for (final o in _daftarObat) o.idObat: o.stok,
-    };
-
-    final hasil = <Map<String, dynamic>>[];
-    bool semuaBerhasil = true;
+    // Bangun map {idObat: stokBaru} dari semua obat yang diambil
+    final Map<int, int> stokUpdates = {};
+    final List<Map<String, dynamic>> hasilLokal = [];
 
     for (final obat in _daftarObat) {
       if (obat.jumlahDiambil <= 0) continue;
       final stokBaru = obat.stok - obat.jumlahDiambil;
-      try {
-        await _obatService.updateStokObat(obat.idObat, stokBaru);
-        obat.stok = stokBaru; // update lokal
-        hasil.add({'nama': obat.namaObat, 'berhasil': true});
-      } catch (e) {
-        semuaBerhasil = false;
-        hasil.add({
-          'nama': obat.namaObat,
-          'berhasil': false,
-          'stokAsli': stokAsli[obat.idObat] ?? obat.stok,
-        });
-      }
+      stokUpdates[obat.idObat] = stokBaru;
+      hasilLokal.add({'nama': obat.namaObat, 'idObat': obat.idObat, 'stokBaru': stokBaru});
     }
 
-    if (!mounted) return;
-    setState(() => _isSaving = false);
+    if (stokUpdates.isEmpty) {
+      setState(() => _isSaving = false);
+      return;
+    }
 
-    if (semuaBerhasil) {
+    try {
+      // Gunakan ObatProvider untuk update stok — cache ter-update otomatis
+      final obatProvider = context.read<ObatProvider>();
+      await obatProvider.updateStokSetelahResep(stokUpdates);
+
+      // Update stok lokal agar UI langsung mencerminkan perubahan
+      for (final obat in _daftarObat) {
+        if (stokUpdates.containsKey(obat.idObat)) {
+          obat.stok = stokUpdates[obat.idObat]!;
+        }
+      }
+
+      if (!mounted) return;
       setState(() {
+        _isSaving = false;
         _berhasil = true;
         _siapTutupPopup = false;
       });
@@ -369,39 +371,38 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
         if (!mounted) return;
         setState(() => _siapTutupPopup = true);
       });
-    } else {
-      _showDialogGagalSimpan(hasil);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      _showDialogGagalSimpan(e.toString());
     }
   }
 
-  void _showDialogGagalSimpan(List<Map<String, dynamic>> hasil) {
+  void _showDialogGagalSimpan(String pesanError) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Sebagian Obat Gagal Diperbarui'),
+        title: const Text('Gagal Menyimpan Resep',
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ...hasil.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                item['berhasil'] == true
-                    ? '\u2705 ${item['nama']} \u2014 berhasil'
-                    : '\u274C ${item['nama']} \u2014 gagal, coba lagi',
-              ),
-            )),
+            Text(
+              pesanError.replaceAll('Exception: ', ''),
+              style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
+            ),
             const SizedBox(height: 12),
             const Text(
               'Stok yang sudah berubah tidak dapat dikembalikan secara otomatis.',
-              style: TextStyle(fontStyle: FontStyle.italic),
+              style: TextStyle(fontStyle: FontStyle.italic, fontSize: 13),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: const Text('OK', style: TextStyle(fontFamily: 'Poppins')),
           ),
         ],
       ),

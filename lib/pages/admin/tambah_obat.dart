@@ -1,8 +1,12 @@
-﻿// Halaman tambah obat baru — form input + validasi & submit ke API
+// Halaman tambah obat baru — form input + validasi & submit ke API
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../models/jenis_obat.dart';
 import '../../models/obat.dart';
+import '../../providers/provider_obat.dart';
+import '../../services/service_jenis_obat.dart';
 import '../../services/service_obat.dart';
 import 'widgets/obat_success_overlay.dart';
 import 'widgets/obat_form_card.dart';
@@ -17,8 +21,8 @@ class TambahObatAdminPage extends StatefulWidget {
 
 class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
   final _obatService  = ObatService();
+  final _idCtrl        = TextEditingController();
   final _namaCtrl      = TextEditingController();
-  final _jenisCtrl     = TextEditingController();
   final _stokCtrl      = TextEditingController();
   final _hargaBeliCtrl = TextEditingController();
   final _hargaJualCtrl = TextEditingController();
@@ -28,9 +32,37 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
   bool _siapTutupPopup = false;
   ObatModel? _obatBaru;
 
+  // Jenis-obat dropdown state
+  final _jenisObatService = JenisObatService();
+  List<JenisObatModel> _jenisObatList = [];
+  JenisObatModel? _selectedJenis;
+  bool _loadingJenis = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchJenisObat();
+  }
+
+  // Fetch jenis-obat list for dropdown
+  Future<void> _fetchJenisObat() async {
+    setState(() => _loadingJenis = true);
+    try {
+      final list = await _jenisObatService.getAllJenisObat();
+      if (!mounted) return;
+      setState(() {
+        _jenisObatList = list;
+        _loadingJenis = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingJenis = false);
+    }
+  }
+
   @override
   void dispose() {
-    _namaCtrl.dispose(); _jenisCtrl.dispose(); _stokCtrl.dispose();
+    _idCtrl.dispose(); _namaCtrl.dispose(); _stokCtrl.dispose();
     _hargaBeliCtrl.dispose(); _hargaJualCtrl.dispose();
     super.dispose();
   }
@@ -59,7 +91,7 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
   String _fmt(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
-  // â”€â”€ SnackBar helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── SnackBar helper ──────────────────────────────────────────────────────────
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(fontFamily: 'Poppins')),
@@ -70,13 +102,21 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
     ));
   }
 
-  // â”€â”€ Tahap 1: Validasi berurutan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Tahap 1: Validasi berurutan ─────────────────────────────────────────────
   bool _validasi() {
+    if (_idCtrl.text.trim().isEmpty) {
+      _snack('ID Obat tidak boleh kosong');
+      return false;
+    }
+    if (int.tryParse(_idCtrl.text.trim()) == null) {
+      _snack('ID Obat harus berupa angka');
+      return false;
+    }
     if (_namaCtrl.text.trim().isEmpty) {
       _snack('Nama obat tidak boleh kosong');
       return false;
     }
-    if (_jenisCtrl.text.trim().isEmpty) {
+    if (_selectedJenis == null) {
       _snack('Jenis obat tidak boleh kosong');
       return false;
     }
@@ -130,7 +170,7 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
     return true;
   }
 
-  // â”€â”€ Tahap 2: Konfirmasi simpan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Tahap 2: Konfirmasi simpan ──────────────────────────────────────────────
   Future<bool> _konfirmasiSimpan() async {
     final result = await showDialog<bool>(
       context: context,
@@ -155,7 +195,7 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
     return result ?? false;
   }
 
-  // â”€â”€ Tahap 3: Eksekusi API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Tahap 3: Eksekusi API ───────────────────────────────────────────────────
   void _simpan() async {
     if (!_validasi()) return;
     final yakin = await _konfirmasiSimpan();
@@ -164,10 +204,10 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
     setState(() => _loading = true);
     try {
       final obatBaru = ObatModel(
-        idObat: DateTime.now().millisecondsSinceEpoch,
+        idObat: int.tryParse(_idCtrl.text.trim()) ?? 0,
         namaObat: _namaCtrl.text.trim(),
-        idJenisObat: null,
-        namaJenisObat: _jenisCtrl.text.trim(),
+        idJenisObat: _selectedJenis!.idJenisObat,
+        namaJenisObat: _selectedJenis!.jenisObat,
         stok: int.tryParse(_stokCtrl.text.trim()) ?? 0,
         satuan: 'Pcs',
         tanggalKadaluwarsa: _selectedDate!,
@@ -195,7 +235,7 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
     }
   }
 
-  // â”€â”€ Dialog gagal API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Dialog gagal API ────────────────────────────────────────────────────────
   void _showDialogGagal() {
     showDialog(
       context: context,
@@ -215,7 +255,7 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
     );
   }
 
-  // â”€â”€ Konfirmasi batal / keluar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Konfirmasi batal / keluar ───────────────────────────────────────────────
   Future<void> _konfirmasiBatal() async {
     final result = await showDialog<bool>(
       context: context,
@@ -261,9 +301,11 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
                 padding: const EdgeInsets.all(16),
                 child: Column(children: [
                   ObatFormCard(children: [
+                    _field(label: 'ID OBAT', ctrl: _idCtrl, hint: 'Masukkan ID Obat', type: TextInputType.number, fmt: [FilteringTextInputFormatter.digitsOnly]),
+                    const SizedBox(height: 16),
                     _field(label: 'NAMA OBAT', ctrl: _namaCtrl, hint: 'Masukkan Nama Obat'),
                     const SizedBox(height: 16),
-                    _field(label: 'JENIS', ctrl: _jenisCtrl, hint: 'Masukkan Jenis'),
+                    _jenisDropdown(),
                     const SizedBox(height: 16),
                     _field(label: 'STOK', ctrl: _stokCtrl, hint: 'Masukkan Stok', type: TextInputType.number, fmt: [FilteringTextInputFormatter.digitsOnly]),
                     const SizedBox(height: 16),
@@ -305,7 +347,7 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
     );
   }
 
-  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Helpers ──────────────────────────────────────────────────────────────────
 
   PreferredSizeWidget _appBar(String title) => AppBar(
     backgroundColor: Colors.white,
@@ -319,6 +361,41 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> {
     title: Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textDark)),
     shape: const Border(bottom: BorderSide(color: AppColors.border)),
   );
+
+  // Dropdown jenis obat — fetched from API
+  Widget _jenisDropdown() {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _lbl('JENIS'),
+      const SizedBox(height: 8),
+      _loadingJenis
+          ? Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: const Center(
+                child: SizedBox(
+                  width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                ),
+              ),
+            )
+          : DropdownButtonFormField<JenisObatModel>(
+              value: _selectedJenis,
+              isExpanded: true,
+              style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: AppColors.textDark),
+              decoration: _deco('Pilih Jenis Obat'),
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMuted),
+              items: _jenisObatList.map((j) => DropdownMenuItem(
+                value: j,
+                child: Text(j.jenisObat, style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: AppColors.textDark)),
+              )).toList(),
+              onChanged: (val) => setState(() => _selectedJenis = val),
+            ),
+    ]);
+  }
 
   Widget _field({required String label, required TextEditingController ctrl, required String hint, TextInputType type = TextInputType.text, List<TextInputFormatter>? fmt}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

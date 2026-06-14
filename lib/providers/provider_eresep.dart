@@ -1,4 +1,4 @@
-﻿// Provider state management untuk data e-Resep
+// Provider state management untuk data e-Resep
 import 'package:flutter/material.dart';
 
 import '../core/constants/api_constants.dart';
@@ -12,6 +12,7 @@ class EResepProvider with ChangeNotifier {
   List<Resep> _resepList = []; // cache data resep dari API
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isTestMode = false; // true = gunakan data lokal, bypass API
 
   List<Resep> get resepList => List.unmodifiable(_resepList);
   List<Resep> get resepAktif => List.unmodifiable(
@@ -37,6 +38,7 @@ class EResepProvider with ChangeNotifier {
 
   // Constructor khusus test — load dummy data tanpa API
   EResepProvider.forTest() {
+    _isTestMode = true;
     _loadLocalData();
   }
 
@@ -116,7 +118,7 @@ class EResepProvider with ChangeNotifier {
 
   // Update status resep (API atau local fallback)
   Future<void> updateStatus(int idResep, String statusResep) async {
-    if (!ApiConstants.apotikApiEnabled) {
+    if (_isTestMode || !ApiConstants.apotikApiEnabled) {
       final index = _resepList.indexWhere((r) => r.idResep == idResep);
       if (index != -1) {
         _resepList[index] = _resepList[index].copyWith(statusResep: statusResep);
@@ -141,7 +143,7 @@ class EResepProvider with ChangeNotifier {
 
   // Tambah resep baru
   Future<void> addResep(Resep resep) async {
-    if (!ApiConstants.apotikApiEnabled) {
+    if (_isTestMode || !ApiConstants.apotikApiEnabled) {
       final newId = _resepList.isEmpty
           ? 1
           : _resepList.map((r) => r.idResep).reduce((a, b) => a > b ? a : b) + 1;
@@ -163,7 +165,7 @@ class EResepProvider with ChangeNotifier {
 
   // Hapus resep berdasarkan id
   Future<void> deleteResep(int idResep) async {
-    if (!ApiConstants.apotikApiEnabled) {
+    if (_isTestMode || !ApiConstants.apotikApiEnabled) {
       _resepList.removeWhere((r) => r.idResep == idResep);
       notifyListeners();
       return;

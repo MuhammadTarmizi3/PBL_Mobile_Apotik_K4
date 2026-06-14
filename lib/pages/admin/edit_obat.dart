@@ -1,9 +1,12 @@
-﻿// Halaman edit obat — form update data obat + validasi & submit ke API
+// Halaman edit obat — form update data obat + validasi & submit ke API
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../models/jenis_obat.dart';
 import '../../models/obat.dart';
-import '../../services/service_obat.dart';
+import '../../providers/provider_obat.dart';
+import '../../services/service_jenis_obat.dart';
 import 'widgets/obat_success_overlay.dart';
 import 'widgets/obat_form_card.dart';
 
@@ -17,9 +20,7 @@ class EditObatAdminPage extends StatefulWidget {
 }
 
 class _EditObatAdminPageState extends State<EditObatAdminPage> {
-  final _obatService = ObatService();
   late final TextEditingController _namaCtrl;
-  late final TextEditingController _jenisCtrl;
   late final TextEditingController _stokCtrl;
   late final TextEditingController _hargaBeliCtrl;
   late final TextEditingController _hargaJualCtrl;
@@ -29,21 +30,45 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
   bool _siapTutupPopup = false;
   ObatModel? _updatedObat;
 
+  // Jenis-obat dropdown state
+  final _jenisObatService = JenisObatService();
+  List<JenisObatModel> _jenisObatList = [];
+  JenisObatModel? _selectedJenis;
+  bool _loadingJenis = false;
+
   @override
   void initState() {
     super.initState();
     final o = widget.obat;
     _namaCtrl      = TextEditingController(text: o.namaObat);
-    _jenisCtrl     = TextEditingController(text: o.namaJenisObat ?? '');
     _stokCtrl      = TextEditingController(text: o.stok.toString());
     _hargaBeliCtrl = TextEditingController(text: o.hargaBeli.toInt().toString());
     _hargaJualCtrl = TextEditingController(text: o.hargaJual.toInt().toString());
     _selectedDate  = o.tanggalKadaluwarsa;
+    _fetchJenisObat();
+  }
+
+  // Fetch jenis-obat list and pre-select the current value
+  Future<void> _fetchJenisObat() async {
+    setState(() => _loadingJenis = true);
+    try {
+      final list = await _jenisObatService.getAllJenisObat();
+      if (!mounted) return;
+      final preSelected = list.where((j) => j.idJenisObat == widget.obat.idJenisObat).firstOrNull;
+      setState(() {
+        _jenisObatList = list;
+        _selectedJenis = preSelected;
+        _loadingJenis = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingJenis = false);
+    }
   }
 
   @override
   void dispose() {
-    _namaCtrl.dispose(); _jenisCtrl.dispose(); _stokCtrl.dispose();
+    _namaCtrl.dispose(); _stokCtrl.dispose();
     _hargaBeliCtrl.dispose(); _hargaJualCtrl.dispose();
     super.dispose();
   }
@@ -72,7 +97,7 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
   String _fmt(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
-  // â”€â”€ SnackBar helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── SnackBar helper ──────────────────────────────────────────────────────────
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(fontFamily: 'Poppins')),
@@ -83,13 +108,13 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
     ));
   }
 
-  // â”€â”€ Tahap 1: Validasi berurutan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Tahap 1: Validasi berurutan ─────────────────────────────────────────────
   bool _validasi() {
     if (_namaCtrl.text.trim().isEmpty) {
       _snack('Nama obat tidak boleh kosong');
       return false;
     }
-    if (_jenisCtrl.text.trim().isEmpty) {
+    if (_selectedJenis == null) {
       _snack('Jenis obat tidak boleh kosong');
       return false;
     }
@@ -106,8 +131,6 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
       _snack('Stok tidak boleh kurang dari 0');
       return false;
     }
-    // Tanggal kadaluwarsa â€” hanya cek apakah sudah dipilih
-    // (edit page selalu punya nilai awal, tapi tetap dicek)
     if (_hargaBeliCtrl.text.trim().isEmpty) {
       _snack('Harga beli harus diisi dengan angka');
       return false;
@@ -141,7 +164,7 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
     return true;
   }
 
-  // â”€â”€ Tahap 2: Konfirmasi simpan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Tahap 2: Konfirmasi simpan ──────────────────────────────────────────────
   Future<bool> _konfirmasiSimpan() async {
     final result = await showDialog<bool>(
       context: context,
@@ -166,7 +189,7 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
     return result ?? false;
   }
 
-  // â”€â”€ Tahap 3: Eksekusi API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Tahap 3: Eksekusi API ───────────────────────────────────────────────────
   void _simpan() async {
     if (!_validasi()) return;
     final yakin = await _konfirmasiSimpan();
@@ -177,8 +200,8 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
       _updatedObat = ObatModel(
         idObat: widget.obat.idObat,
         namaObat: _namaCtrl.text.trim(),
-        idJenisObat: widget.obat.idJenisObat,
-        namaJenisObat: _jenisCtrl.text.trim(),
+        idJenisObat: _selectedJenis!.idJenisObat,
+        namaJenisObat: _selectedJenis!.jenisObat,
         stok: int.tryParse(_stokCtrl.text.trim()) ?? 0,
         satuan: widget.obat.satuan,
         tanggalKadaluwarsa: _selectedDate,
@@ -186,8 +209,8 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
         hargaJual: double.tryParse(_hargaJualCtrl.text.trim()) ?? 0.0,
       );
 
-      final result = await _obatService.updateObat(widget.obat.idObat, _updatedObat!);
-      _updatedObat = result;
+      final provider = context.read<ObatProvider>();
+      await provider.updateObat(_updatedObat!);
       if (!mounted) return;
 
       setState(() {
@@ -206,7 +229,7 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
     }
   }
 
-  // â”€â”€ Dialog gagal API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Dialog gagal API ────────────────────────────────────────────────────────
   void _showDialogGagal() {
     showDialog(
       context: context,
@@ -226,7 +249,7 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
     );
   }
 
-  // â”€â”€ Konfirmasi batal / keluar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Konfirmasi batal / keluar ───────────────────────────────────────────────
   Future<void> _konfirmasiBatal() async {
     final result = await showDialog<bool>(
       context: context,
@@ -285,7 +308,7 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
                   ObatFormCard(children: [
                     _field(label: 'NAMA OBAT', ctrl: _namaCtrl, hint: 'Masukkan Nama Obat'),
                     const SizedBox(height: 16),
-                    _field(label: 'JENIS', ctrl: _jenisCtrl, hint: 'Masukkan Jenis'),
+                    _jenisDropdown(),
                     const SizedBox(height: 16),
                     _field(label: 'STOK', ctrl: _stokCtrl, hint: 'Masukkan Stok', type: TextInputType.number, fmt: [FilteringTextInputFormatter.digitsOnly]),
                     const SizedBox(height: 16),
@@ -327,7 +350,42 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> {
     );
   }
 
-  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  // Dropdown jenis obat — fetched from /api/jenis-obat, pre-selected by idJenisObat
+  Widget _jenisDropdown() {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _lbl('JENIS'),
+      const SizedBox(height: 8),
+      _loadingJenis
+          ? Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: const Center(
+                child: SizedBox(
+                  width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                ),
+              ),
+            )
+          : DropdownButtonFormField<JenisObatModel>(
+              value: _selectedJenis,
+              isExpanded: true,
+              style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: AppColors.textDark),
+              decoration: _deco('Pilih Jenis Obat'),
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMuted),
+              items: _jenisObatList.map((j) => DropdownMenuItem(
+                value: j,
+                child: Text(j.jenisObat, style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: AppColors.textDark)),
+              )).toList(),
+              onChanged: (val) => setState(() => _selectedJenis = val),
+            ),
+    ]);
+  }
 
   Widget _field({required String label, required TextEditingController ctrl, required String hint, TextInputType type = TextInputType.text, List<TextInputFormatter>? fmt}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -1,4 +1,4 @@
-﻿// Halaman daftar obat admin — search, filter, CRUD navigation
+// Halaman daftar obat admin — search, filter, CRUD navigation
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -169,6 +169,8 @@ class _ObatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final expColor = (obat.isExpired || obat.isExpiringSoon) ? Colors.red : AppColors.onSurfaceMuted;
+    final jenisName = context.read<ObatProvider>().getJenisName(obat.idJenisObat);
+    
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -178,7 +180,7 @@ class _ObatTile extends StatelessWidget {
             Container(
               width: 48, height: 48,
               decoration: BoxDecoration(color: AppColors.backgroundLight, borderRadius: BorderRadius.circular(10)),
-              child: Icon(ObatIconHelper.getIcon(obat.namaJenisObat ?? ''), color: AppColors.teal, size: 24),
+              child: Icon(ObatIconHelper.getIcon(jenisName), color: AppColors.teal, size: 24),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -186,9 +188,9 @@ class _ObatTile extends StatelessWidget {
                 Text(obat.namaObat, style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
                 const SizedBox(height: 3),
                 Row(children: [
-                  Text('Jenis: ${obat.namaJenisObat ?? ''}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: AppColors.onSurfaceMuted)),
+                  Text('Jenis: $jenisName', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: AppColors.onSurfaceMuted)),
                   const SizedBox(width: 12),
-                  Text('Stok: ${obat.stok} ${obat.satuan}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: AppColors.onSurfaceMuted)),
+                  Text('Stok: ${obat.stok}${obat.satuan == '-' || obat.satuan.isEmpty ? '' : ' ${obat.satuan}'}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: AppColors.onSurfaceMuted)),
                 ]),
                 const SizedBox(height: 3),
                 Row(children: [

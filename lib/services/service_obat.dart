@@ -1,4 +1,4 @@
-﻿// Service untuk CRUD obat via API (dengan relasi jenis_obat)
+// Service untuk CRUD obat via API (dengan relasi jenis_obat)
 import 'package:dio/dio.dart';
 
 import '../core/constants/api_constants.dart';
@@ -77,7 +77,7 @@ class ObatService {
     try {
       final response = await _dioClient.post(
         ApiConstants.obat,
-        data: obat.toJsonForCreate(),
+        data: obat.toJson(),
       );
 
       if (response.statusCode == 201) {

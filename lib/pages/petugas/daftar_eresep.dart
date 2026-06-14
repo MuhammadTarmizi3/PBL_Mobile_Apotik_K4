@@ -1,15 +1,28 @@
-﻿// Halaman daftar e-Resep — list resep aktif dan selesai untuk petugas
+// Halaman daftar e-Resep — list resep aktif dan selesai untuk petugas
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/provider_eresep.dart';
+import '../../providers/provider_obat.dart';
 import '../../models/resep.dart';
 import 'detail_eresep.dart';
 
 // Tab e-Resep — list resep dengan navigasi ke detail
-class EResepPage extends StatelessWidget {
-  // Aturan Wajib: super.key
+class EResepPage extends StatefulWidget {
   const EResepPage({super.key});
+
+  @override
+  State<EResepPage> createState() => _EResepPageState();
+}
+
+class _EResepPageState extends State<EResepPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ObatProvider>().fetchObat(); // re-fetch tiap buka screen
+    });
+  }
 
   // Aturan Wajib: Fungsi untuk menggambar tampilan halaman
   @override

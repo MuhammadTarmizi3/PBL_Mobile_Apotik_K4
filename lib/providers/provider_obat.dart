@@ -1,20 +1,25 @@
-﻿// Provider state management untuk data obat apotek
+// Provider state management untuk data obat apotek
 import 'package:flutter/material.dart';
 
 import '../core/constants/api_constants.dart';
 import '../models/obat.dart';
+import '../models/jenis_obat.dart';
 import '../services/service_obat.dart';
+import '../services/service_jenis_obat.dart';
 
 // Provider obat — CRUD, filter kategori, dan search obat
 class ObatProvider with ChangeNotifier {
   final ObatService _obatService = ObatService();
+  final JenisObatService _jenisObatService = JenisObatService();
 
   List<ObatModel> _obatList = []; // cache data obat dari API
   List<ObatModel> _filteredObatList = []; // hasil filter/search
+  List<JenisObatModel> _jenisList = []; // cache data jenis obat
   String _selectedKategori = 'Semua'; // kategori yang sedang aktif
   String _searchQuery = ''; // query pencarian obat
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isTestMode = false; // true = gunakan data lokal, bypass API
 
   List<ObatModel> get obatList => List.unmodifiable(_obatList);
   List<ObatModel> get filteredObatList => List.unmodifiable(_filteredObatList);
@@ -25,8 +30,9 @@ class ObatProvider with ChangeNotifier {
   List<String> get kategoriList {
     final Set<String> unique = {};
     for (final o in _obatList) {
-      if (o.namaJenisObat != null && o.namaJenisObat!.isNotEmpty) {
-        unique.add(o.namaJenisObat!);
+      final name = getJenisName(o.idJenisObat);
+      if (name != '-') {
+        unique.add(name);
       }
     }
     return ['Semua', ...unique];
@@ -35,7 +41,7 @@ class ObatProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isUsingLocalData => !ApiConstants.apotikApiEnabled;
   String get localDataNotice =>
-      'API modul apotik belum tersedia â€” menampilkan data contoh.';
+      'API modul apotik belum tersedia — menampilkan data contoh.';
 
   // Constructor utama — fetch API atau load dummy sesuai flag
   ObatProvider() {
@@ -48,11 +54,20 @@ class ObatProvider with ChangeNotifier {
 
   // Constructor khusus test — load dummy data tanpa API
   ObatProvider.forTest() {
+    _isTestMode = true;
     _loadLocalData();
+  }
+
+  // Helper untuk mendapatkan nama jenis obat berdasarkan id
+  String getJenisName(int? idJenisObat) {
+    if (idJenisObat == null) return '-';
+    final match = _jenisList.where((j) => j.idJenisObat == idJenisObat).firstOrNull;
+    return match?.jenisObat ?? '-';
   }
 
   // Load dummy data dari model
   void _loadLocalData() {
+    _jenisList = List.from(JenisObatModel.dummyData);
     _obatList = List.from(ObatModel.dummyData);
     _filterObat();
     _errorMessage = null;
@@ -71,6 +86,7 @@ class ObatProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      _jenisList = await _jenisObatService.getAllJenisObat();
       _obatList = await _obatService.getAllObat();
       _filterObat();
     } catch (e) {
@@ -97,7 +113,7 @@ class ObatProvider with ChangeNotifier {
 
   // Tambah obat baru (API atau local fallback)
   Future<void> addObat(ObatModel obat) async {
-    if (!ApiConstants.apotikApiEnabled) {
+    if (_isTestMode || !ApiConstants.apotikApiEnabled) {
       final newId = _obatList.isEmpty
           ? 1
           : _obatList.map((o) => o.idObat).reduce((a, b) => a > b ? a : b) + 1;
@@ -121,7 +137,7 @@ class ObatProvider with ChangeNotifier {
 
   // Update data obat
   Future<void> updateObat(ObatModel obat) async {
-    if (!ApiConstants.apotikApiEnabled) {
+    if (_isTestMode || !ApiConstants.apotikApiEnabled) {
       final index = _obatList.indexWhere((o) => o.idObat == obat.idObat);
       if (index != -1) {
         _obatList[index] = obat;
@@ -148,7 +164,7 @@ class ObatProvider with ChangeNotifier {
 
   // Hapus obat berdasarkan id
   Future<void> deleteObat(int idObat) async {
-    if (!ApiConstants.apotikApiEnabled) {
+    if (_isTestMode || !ApiConstants.apotikApiEnabled) {
       _obatList.removeWhere((o) => o.idObat == idObat);
       _filterObat();
       notifyListeners();
@@ -167,6 +183,53 @@ class ObatProvider with ChangeNotifier {
     }
   }
 
+  // Ambil obat dari cache berdasarkan id
+  ObatModel? getObatById(int idObat) {
+    final matches = _obatList.where((o) => o.idObat == idObat);
+    return matches.isEmpty ? null : matches.first;
+  }
+
+  // Update stok beberapa obat sekaligus setelah resep diproses
+  // Menerima map {idObat: stokBaru} dan meng-update cache + API
+  // Throws exception dengan daftar obat yang gagal jika ada error
+  Future<void> updateStokSetelahResep(Map<int, int> stokUpdates) async {
+    if (stokUpdates.isEmpty) return;
+
+    if (_isTestMode || !ApiConstants.apotikApiEnabled) {
+      // Mode lokal: update langsung di cache
+      for (final entry in stokUpdates.entries) {
+        final idx = _obatList.indexWhere((o) => o.idObat == entry.key);
+        if (idx != -1) {
+          _obatList[idx] = _obatList[idx].copyWith(stok: entry.value);
+        }
+      }
+      _filterObat();
+      notifyListeners();
+      return;
+    }
+
+    // Mode API: update masing-masing obat
+    final List<String> gagal = [];
+    for (final entry in stokUpdates.entries) {
+      try {
+        final updated = await _obatService.updateStokObat(entry.key, entry.value);
+        final idx = _obatList.indexWhere((o) => o.idObat == entry.key);
+        if (idx != -1) {
+          _obatList[idx] = updated;
+        }
+      } catch (_) {
+        final namaObat = getObatById(entry.key)?.namaObat ?? 'Obat #${entry.key}';
+        gagal.add(namaObat);
+      }
+    }
+    _filterObat();
+    notifyListeners();
+
+    if (gagal.isNotEmpty) {
+      throw Exception('Gagal update stok: ${gagal.join(', ')}');
+    }
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();
@@ -180,9 +243,10 @@ class ObatProvider with ChangeNotifier {
   // Filter obat berdasarkan kategori dan search query
   void _filterObat() {
     _filteredObatList = _obatList.where((o) {
-      final kMatch = _selectedKategori == 'Semua' || o.namaJenisObat == _selectedKategori;
+      final namaJenis = getJenisName(o.idJenisObat);
+      final kMatch = _selectedKategori == 'Semua' || namaJenis == _selectedKategori;
       final sMatch = o.namaObat.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (o.namaJenisObat?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+          namaJenis.toLowerCase().contains(_searchQuery.toLowerCase());
       return kMatch && sMatch;
     }).toList();
   }

@@ -127,7 +127,7 @@ class ObatModel {
       'ID_JENIS_OBAT': idJenisObat,
       'NAMA_OBAT': namaObat,
       'STOK': stok,
-      'EXPIRED_DATE': tanggalKadaluwarsa.toIso8601String().split('T').first,
+      'TANGGAL_KADALUWARSA': tanggalKadaluwarsa.toIso8601String().split('T').first,
       'HARGA_BELI': hargaBeli,
       'HARGA_JUAL': hargaJual,
     };
@@ -139,7 +139,7 @@ class ObatModel {
       'ID_JENIS_OBAT': idJenisObat,
       'NAMA_OBAT': namaObat,
       'STOK': stok,
-      'EXPIRED_DATE': tanggalKadaluwarsa.toIso8601String().split('T').first,
+      'TANGGAL_KADALUWARSA': tanggalKadaluwarsa.toIso8601String().split('T').first,
       'HARGA_BELI': hargaBeli,
       'HARGA_JUAL': hargaJual,
     };
