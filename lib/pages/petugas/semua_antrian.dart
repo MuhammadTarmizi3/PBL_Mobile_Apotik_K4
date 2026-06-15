@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../models/antrian_rs.dart';
 import '../../services/service_antrian_rs.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/date_constants.dart';
+import '../../core/constants/status_constants.dart';
 
 // Halaman semua antrian dengan pull-to-refresh
 class LihatSemuaAntrianPage extends StatefulWidget {
@@ -33,8 +35,7 @@ class _LihatSemuaAntrianPageState extends State<LihatSemuaAntrianPage> {
     setState(() => _isLoading = true);
     
     try {
-      // TODO: Kembalikan ke DateTime.now() setelah selesai testing
-      final todayString = '2026-06-04';
+      final todayString = DateConstants.todayString;
       final antrian = await _antrianService.getAllAntrianRs(
         tanggal: todayString,
       );
@@ -61,10 +62,10 @@ class _LihatSemuaAntrianPageState extends State<LihatSemuaAntrianPage> {
   // TIDAK tampilkan yang sedang dilayani dan yang di-skip - hanya tracking local
   
   List<AntrianRs> get _menunggu => 
-      _allAntrian.where((a) => a.status?.toLowerCase() == 'lunas').toList();
+      _allAntrian.where((a) => a.status?.toLowerCase() == StatusConstants.lunas).toList();
   
   List<AntrianRs> get _selesai => 
-      _allAntrian.where((a) => a.status?.toLowerCase() == 'obat_diserahkan').toList();
+      _allAntrian.where((a) => a.status?.toLowerCase() == StatusConstants.obatDiserahkan).toList();
 
   @override
   Widget build(BuildContext context) {

@@ -7,10 +7,12 @@ import '../../../core/constants/app_colors.dart';
 class NextQueueHeader extends StatelessWidget {
   const NextQueueHeader({
     super.key,
-    required this.onLihatSemua,
+    this.onLihatSemua,
+    this.showLihatSemua = true,
   });
 
-  final VoidCallback onLihatSemua;
+  final VoidCallback? onLihatSemua;
+  final bool showLihatSemua;
 
   @override
   Widget build(BuildContext context) {
@@ -26,17 +28,18 @@ class NextQueueHeader extends StatelessWidget {
             color: AppColors.textDark,
           ),
         ),
-        TextButton(
-          onPressed: onLihatSemua,
-          child: const Text(
-            'Lihat Semua',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              color: AppColors.teal,
-              fontWeight: FontWeight.w600,
+        if (showLihatSemua)
+          TextButton(
+            onPressed: onLihatSemua,
+            child: const Text(
+              'Lihat Semua',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: AppColors.teal,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-        ),
       ],
     );
   }

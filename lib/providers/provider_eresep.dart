@@ -1,7 +1,8 @@
-// Provider state management untuk data e-Resep
+﻿// Provider state management untuk data e-Resep
 import 'package:flutter/material.dart';
 
 import '../core/constants/api_constants.dart';
+import '../core/constants/status_constants.dart';
 import '../models/resep.dart';
 import '../services/service_resep.dart';
 
@@ -19,7 +20,7 @@ class EResepProvider with ChangeNotifier {
         _resepList.where((r) => r.statusResep.toUpperCase() == 'AKTIF').toList(),
       );
   List<Resep> get resepSelesai => List.unmodifiable(
-        _resepList.where((r) => r.statusResep.toUpperCase() == 'SELESAI').toList(),
+        _resepList.where((r) => r.statusResep.toUpperCase() == StatusConstants.selesai).toList(),
       );
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;

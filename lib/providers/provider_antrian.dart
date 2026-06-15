@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/antrian.dart';
 import '../services/service_antrian.dart';
+import '../core/constants/status_constants.dart';
 
 // Provider antrian — kelola daftar antrian, status, dan aksi panggil/selesai
 class AntrianProvider extends ChangeNotifier {
@@ -80,7 +81,7 @@ class AntrianProvider extends ChangeNotifier {
     if (current == null) return null;
 
     try {
-      await _antrianService.updateStatusAntrian(current.idAntrian, 'DIPROSES');
+      await _antrianService.updateStatusAntrian(current.idAntrian, StatusConstants.diproses);
       await fetchAntrian();
       return antrianAktif;
     } catch (e) {
@@ -97,7 +98,7 @@ class AntrianProvider extends ChangeNotifier {
 
     try {
       // Set antrian aktif ke SELESAI
-      await _antrianService.updateStatusAntrian(current.idAntrian, 'SELESAI');
+      await _antrianService.updateStatusAntrian(current.idAntrian, StatusConstants.selesai);
       await fetchAntrian();
 
       // Panggil antrian berikutnya (set ke DIPROSES)
@@ -113,7 +114,7 @@ class AntrianProvider extends ChangeNotifier {
   // Selesaikan antrian tertentu
   Future<void> selesaikanAntrian(Antrian antrian) async {
     try {
-      await _antrianService.updateStatusAntrian(antrian.idAntrian, 'SELESAI');
+      await _antrianService.updateStatusAntrian(antrian.idAntrian, StatusConstants.selesai);
       await fetchAntrian();
 
       // Auto panggil berikutnya kalau tidak ada antrian aktif
@@ -169,7 +170,7 @@ class AntrianProvider extends ChangeNotifier {
     final menunggu = _daftarAntrian.where((a) => a.status == AntrianStatus.menunggu).toList();
 
     if (menunggu.isNotEmpty) {
-      await _antrianService.updateStatusAntrian(menunggu.first.idAntrian, 'DIPROSES');
+      await _antrianService.updateStatusAntrian(menunggu.first.idAntrian, StatusConstants.diproses);
     }
   }
 }

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/local_data_notice.dart';
 import '../../providers/provider_eresep.dart';
 import '../../providers/provider_obat.dart';
 import '../../models/resep.dart';
@@ -37,26 +38,7 @@ class _EResepPageState extends State<EResepPage> {
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           if (provider.isUsingLocalData && index == 0) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline_rounded, size: 18, color: AppColors.warning),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      provider.localDataNotice,
-                      style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.textDark),
-                    ),
-                  ),
-                ],
-              ),
-            );
+            return LocalDataNotice(message: provider.localDataNotice);
           }
           final resepIndex = provider.isUsingLocalData ? index - 1 : index;
           return _buildResepCard(context, provider.resepList[resepIndex]);

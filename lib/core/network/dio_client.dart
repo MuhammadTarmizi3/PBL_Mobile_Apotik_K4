@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../constants/api_constants.dart';
+import '../constants/storage_keys.dart';
 
 // Dio client dengan interceptor auto-attach token dan auto-refresh
 class DioClient {
@@ -34,7 +35,7 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await _storage.read(key: 'auth_token');
+          final token = await _storage.read(key: StorageKeys.authToken);
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -44,11 +45,11 @@ class DioClient {
           if (error.response?.statusCode == 401) {
             debugPrint('[AUTH] Token expired/invalid — clearing auth data.');
             // Hapus semua data auth agar user dipaksa login ulang
-            await _storage.delete(key: 'auth_token');
-            await _storage.delete(key: 'auth_role');
-            await _storage.delete(key: 'auth_email');
-            await _storage.delete(key: 'auth_user_id');
-            await _storage.delete(key: 'auth_expired_at');
+            await _storage.delete(key: StorageKeys.authToken);
+            await _storage.delete(key: StorageKeys.authRole);
+            await _storage.delete(key: StorageKeys.authEmail);
+            await _storage.delete(key: StorageKeys.authUserId);
+            await _storage.delete(key: StorageKeys.authExpiredAt);
           }
           return handler.next(error);
         },

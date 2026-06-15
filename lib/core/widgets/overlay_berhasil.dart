@@ -1,64 +1,89 @@
-// Overlay sukses — feedback visual setelah aksi berhasil
+// Overlay sukses — feedback visual setelah aksi berhasil (unified)
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 
-// Overlay popup sukses dengan animasi centang (tap-to-close)
+// Overlay popup sukses dengan tap-to-close (mendukung delayed dismiss)
 class SuccessOverlay extends StatelessWidget {
   final String message;
-  final VoidCallback onDismiss;
+  final bool siapTutup;
+  final Object? onDismissResult;
+  final VoidCallback? onDismiss;
 
   const SuccessOverlay({
     super.key,
     required this.message,
-    required this.onDismiss,
+    this.siapTutup = true,
+    this.onDismissResult,
+    this.onDismiss,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onDismiss,
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.5),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+    return Positioned.fill(
+      child: GestureDetector(
+        onTap: () {
+          if (!siapTutup) return;
+          if (onDismiss != null) {
+            onDismiss!();
+          } else {
+            Navigator.pop(context, onDismissResult);
+          }
+        },
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.45),
+          child: Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
                   ),
-                  child: const Icon(
-                    Icons.check_circle_rounded,
-                    size: 64,
-                    color: AppColors.success,
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_rounded, color: Colors.white, size: 48),
                   ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
+                  const SizedBox(height: 24),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textDark,
+                      height: 1.4,
+                      decoration: TextDecoration.none,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Tap untuk menutup',
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14,
-                    color: AppColors.onSurfaceMuted,
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Ketuk di mana saja untuk kembali',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      color: AppColors.textMuted,
+                      decoration: TextDecoration.none,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -6,10 +6,12 @@ import '../../models/resep.dart';
 import '../../models/obat_apotek.dart';
 import '../../core/widgets/badges/badge_kategori.dart';
 import '../../core/widgets/layouts/custom_app_bar.dart';
+import '../../core/widgets/snackbar.dart';
+import '../../core/widgets/overlay_berhasil.dart';
+import '../../core/widgets/search_bar.dart';
 import 'widgets/resep_terpilih_card.dart';
 import 'widgets/obat_card.dart';
 import 'widgets/eresep_bottom_actions.dart';
-import 'widgets/eresep_success_overlay.dart';
 import '../../providers/provider_obat.dart';
 
 // Widget detail e-Resep — proses pengambilan obat dari resep
@@ -136,33 +138,15 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
   void _increment(ObatApotek obat) {
     final int? resepJumlah = _getResepJumlah(obat);
     if (resepJumlah == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Obat ini tidak ada dalam resep dokter'),
-          backgroundColor: AppColors.pureRed,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      showAppSnackBar(context, 'Obat ini tidak ada dalam resep dokter', backgroundColor: AppColors.pureRed);
       return;
     }
     if (obat.jumlahDiambil >= obat.stok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Stok tidak cukup (tersedia: ${obat.stok})'),
-          backgroundColor: AppColors.pureRed,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      showAppSnackBar(context, 'Stok tidak cukup (tersedia: ${obat.stok})', backgroundColor: AppColors.pureRed);
       return;
     }
     if (obat.jumlahDiambil >= resepJumlah) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Jumlah melebihi resep dokter (maks. $resepJumlah)'),
-          backgroundColor: AppColors.pureRed,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      showAppSnackBar(context, 'Jumlah melebihi resep dokter (maks. $resepJumlah)', backgroundColor: AppColors.pureRed);
       return;
     }
     setState(() => obat.jumlahDiambil++);
@@ -188,24 +172,12 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
 
     if (resepJumlah != null && nilai > resepJumlah) {
       if (showSnackBar) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Melebihi jumlah yang diminta dalam eResep'),
-            backgroundColor: AppColors.pureRed,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        showAppSnackBar(context, 'Melebihi jumlah yang diminta dalam eResep', backgroundColor: AppColors.pureRed);
       }
       nilai = resepJumlah;
     } else if (nilai > stok) {
       if (showSnackBar) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Melebihi stok yang tersedia (stok: $stok)'),
-            backgroundColor: AppColors.pureRed,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        showAppSnackBar(context, 'Melebihi stok yang tersedia (stok: $stok)', backgroundColor: AppColors.pureRed);
       }
       nilai = stok;
     }
@@ -415,13 +387,7 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
 
     // Tahap 1: validasi jumlah input vs eResep
     if (!_validasiJumlahEResep()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Jumlah obat belum sesuai eResep. Periksa kembali.'),
-          backgroundColor: AppColors.pureRed,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      showAppSnackBar(context, 'Jumlah obat belum sesuai eResep. Periksa kembali.', backgroundColor: AppColors.pureRed);
       return;
     }
 
@@ -478,7 +444,7 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
                 const SizedBox(height: 8),
                 ResepTerpilihCard(resep: widget.resep),
                 const SizedBox(height: 20),
-                _buildSearchBar(),
+                AppSearchBar(controller: _searchController, onChanged: (v) => setState(() => _searchQuery = v), hintText: 'Cari Nama Obat'),
                 const SizedBox(height: 16),
                 _sectionLabel('DAFTAR OBAT (LIST OBAT)'),
                 const SizedBox(height: 8),
@@ -512,7 +478,10 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
           ),
           ),
         ),
-        if (_berhasil) EresepSuccessOverlay(siapTutup: _siapTutupPopup),
+        if (_berhasil) SuccessOverlay(
+          message: 'RESEP BERHASIL\nDI PROSES',
+          siapTutup: _siapTutupPopup,
+        ),
       ],
     );
   }
@@ -526,33 +495,6 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
         fontWeight: FontWeight.w600,
         color: AppColors.textMuted,
         letterSpacing: 0.8,
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return TextField(
-      controller: _searchController,
-      onChanged: (value) => setState(() => _searchQuery = value),
-      style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
-      decoration: InputDecoration(
-        hintText: 'Cari Nama Obat',
-        hintStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: AppColors.onSurfaceMuted),
-        prefixIcon: const Icon(Icons.search_rounded, color: AppColors.onSurfaceMuted),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.close_rounded, color: AppColors.onSurfaceMuted, size: 18),
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() => _searchQuery = '');
-                },
-              )
-            : null,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryLight, width: 1.5)),
       ),
     );
   }

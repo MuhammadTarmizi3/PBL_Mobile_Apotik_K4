@@ -1,8 +1,9 @@
 ﻿// Halaman utama admin — tab navigasi dashboard, obat, profil
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/bottom_nav_bar.dart';
+import '../../core/widgets/logo_app_bar.dart';
 import 'dashboard_admin.dart';
 import 'daftar_obat.dart';
 import 'profil_admin.dart';
@@ -24,7 +25,7 @@ class _MainAdminPageState extends State<MainAdminPage> {
     // Scaffold sebagai kerangka dasar halaman
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: _selectedIndex == 2 ? null : _buildAppBar(),
+      appBar: _selectedIndex == 2 ? null : const LogoAppBar(profileAsset: AppAssets.fotoProfileAdmin),
       body: IndexedStack(
         index: _selectedIndex,
         children: [
@@ -33,7 +34,15 @@ class _MainAdminPageState extends State<MainAdminPage> {
           const ProfileAdminPage(),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: AnimatedBottomNav(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        items: const [
+          BottomNavItemData(icon: Icons.grid_view_rounded, label: 'Dashboard'),
+          BottomNavItemData(icon: Icons.medication_rounded, label: 'Obat'),
+          BottomNavItemData(icon: Icons.person_outline_rounded, label: 'Profile'),
+        ],
+      ),
       floatingActionButton: _selectedIndex == 1
           ? FloatingActionButton(
               onPressed: () => _obatKey.currentState?.navigasiTambahObat(),
@@ -45,90 +54,5 @@ class _MainAdminPageState extends State<MainAdminPage> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() => AppBar(
-    backgroundColor: AppColors.surface, elevation: 0, scrolledUnderElevation: 0,
-    automaticallyImplyLeading: false, titleSpacing: 20, toolbarHeight: 64,
-    shape: const Border(bottom: BorderSide(color: AppColors.border, width: 1)),
-    title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      SvgPicture.asset(AppAssets.logoUtamaLandscape, height: 50, fit: BoxFit.contain),
-      CircleAvatar(radius: 18, backgroundImage: AssetImage(AppAssets.fotoProfileAdmin)),
-    ]),
-  );
 
-  Widget _buildBottomNav() {
-    return Container(
-      height: 78,
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(
-          top: BorderSide(
-            color: AppColors.border,
-            width: 1,
-          ),
-        ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textMuted,
-        selectedLabelStyle: const TextStyle(
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 12,
-        ),
-        items: [
-          BottomNavigationBarItem(
-            icon: _navIcon(Icons.grid_view_rounded, 0),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: _navIcon(Icons.medication_rounded, 1),
-            label: 'Obat',
-          ),
-          BottomNavigationBarItem(
-            icon: _navIcon(Icons.person_outline_rounded, 2),
-            label: 'Profile',
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Icon navigasi dengan animasi scale + background saat aktif
-  Widget _navIcon(IconData icon, int index) {
-    final bool active = _selectedIndex == index;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeInOut,
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: active
-            ? AppColors.primary.withValues(alpha: 0.12)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: AnimatedScale(
-        duration: const Duration(milliseconds: 220),
-        scale: active ? 1.1 : 1.0,
-        child: Icon(
-          icon,
-          size: 22,
-          color: active ? AppColors.primary : AppColors.textMuted,
-        ),
-      ),
-    );
-  }
 }

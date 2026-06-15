@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:go_router/go_router.dart';
+import '../core/constants/app_assets.dart';
 
 // Splash screen dengan animasi fade-in
 class OpeningPage extends StatefulWidget {
@@ -73,7 +74,7 @@ class _OpeningPageState extends State<OpeningPage>
           // Gambar background tanpa logo yang mengisi seluruh layar
           Positioned.fill(
             child: Image.asset(
-              'asset/image/Opening-1.png', // Background polos tanpa logo
+              AppAssets.openingBackground, // Background polos tanpa logo
               fit: BoxFit.cover, // Memastikan gambar memenuhi seluruh layar
             ),
           ),
@@ -85,7 +86,7 @@ class _OpeningPageState extends State<OpeningPage>
               opacity: _fadeAnimation, // Menghubungkan animasi ke widget ini
               // Gambar logo + teks "Rumah Sakit Viamedika"
               child: Image.asset(
-                'asset/image/Opening.png', // Gambar dengan logo di tengah
+                AppAssets.openingLogo, // Gambar dengan logo di tengah
                 fit: BoxFit.cover,
               ),
             ),

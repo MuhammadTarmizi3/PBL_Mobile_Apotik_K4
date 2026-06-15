@@ -2,6 +2,7 @@
 import 'package:dio/dio.dart';
 
 import '../core/constants/api_constants.dart';
+import '../core/constants/status_constants.dart';
 import '../core/network/api_error_handler.dart';
 import '../core/network/dio_client.dart';
 import '../models/antrian_rs.dart';
@@ -72,7 +73,7 @@ class AntrianRsService {
         // Filter hanya yang statusnya "lunas" (sudah bayar)
         return allAntrian.where((antrian) {
           final status = antrian.status?.toLowerCase() ?? '';
-          return status == 'lunas';
+          return status == StatusConstants.lunas;
         }).toList();
       } else {
         throw Exception('Gagal memuat antrian RS: ${response.statusMessage}');

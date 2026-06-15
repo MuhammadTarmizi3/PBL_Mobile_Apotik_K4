@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/antrian_rs.dart';
-import '../../services/service_antrian_rs.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/date_constants.dart';
+import '../../core/constants/status_constants.dart';
+import '../../core/mixins/dashboard_fetch_mixin.dart';
 import '../../core/widgets/snackbar.dart';
 import '../../core/widgets/state_error.dart';
 import '../../core/widgets/cards/card_antrian_hari_ini.dart';
@@ -25,70 +27,47 @@ class DashboardPetugasPage extends StatefulWidget {
   State<DashboardPetugasPage> createState() => _DashboardPetugasPageState();
 }
 
-class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
-  final AntrianRsService _antrianRsService = AntrianRsService();
-  List<AntrianRs> _antrianRsList = [];
-  List<AntrianRs> _allAntrianToday = [];
-  AntrianRs? _antrianAktifApotik;
-  final List<AntrianRs> _antrianSelesai = [];
+class _DashboardPetugasPageState extends State<DashboardPetugasPage> with DashboardFetchMixin<DashboardPetugasPage> {
   final Set<int> _skippedAntrianIds = {};
-  bool _isRefreshing = false;
-  bool _isLoading = true;
-  String? _errorMessage;
-  Timer? _autoRefreshTimer;
-  static const Duration _autoRefreshInterval = Duration(seconds: 10);
 
   @override
   void initState() {
     super.initState();
-    _fetchAntrianData();
-    _startAutoRefresh();
+    fetchData();
+    startAutoRefresh();
   }
   
   @override
   void dispose() {
-    _stopAutoRefresh();
+    stopAutoRefresh();
     super.dispose();
   }
 
-  void _startAutoRefresh() {
-    _stopAutoRefresh();
-    _autoRefreshTimer = Timer.periodic(_autoRefreshInterval, (timer) {
-      if (mounted && !_isRefreshing) {
-        _fetchAntrianData(silent: true);
-      }
-    });
-  }
-
-  void _stopAutoRefresh() {
-    _autoRefreshTimer?.cancel();
-    _autoRefreshTimer = null;
-  }
-
-  Future<void> _fetchAntrianData({bool silent = false}) async {
-    if (_isRefreshing) return;
+  @override
+  Future<void> fetchData({bool silent = false}) async {
+    if (isRefreshing) return;
     setState(() {
-      _isRefreshing = true;
-      if (!silent) _errorMessage = null;
+      isRefreshing = true;
+      if (!silent) errorMessage = null;
     });
     try {
-      final todayString = '2026-06-04';
-      final allAntrian = await _antrianRsService.getAllAntrianRs(
+      final todayString = DateConstants.todayString;
+      final allAntrian = await antrianRsService.getAllAntrianRs(
         tanggal: todayString,
       );
       final antrianLunas = allAntrian.where((a) => a.isSelesaiBayar).toList();
       if (mounted) {
-        final previousActiveId = _antrianAktifApotik?.id;
+        final previousActiveId = antrianAktifApotik?.id;
         // Reorder: non-skipped first, skipped at bottom (fix Q4)
         final nonSkipped = antrianLunas.where((a) => !_skippedAntrianIds.contains(a.id)).toList();
         final skipped = antrianLunas.where((a) => _skippedAntrianIds.contains(a.id)).toList();
         final reordered = [...nonSkipped, ...skipped];
         setState(() {
-          _antrianRsList = reordered;
-          _allAntrianToday = allAntrian;
-          _isRefreshing = false;
-          _isLoading = false;
-          _errorMessage = null;
+          antrianRsList = reordered;
+          allAntrianToday = allAntrian;
+          isRefreshing = false;
+          isLoading = false;
+          errorMessage = null;
         });
         // Smart logic untuk set antrian aktif
         if (antrianLunas.isNotEmpty) {
@@ -96,9 +75,9 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
             final stillExists = antrianLunas.any((a) => a.id == previousActiveId);
             if (stillExists) {
               // Pertahankan antrian aktif yang sama
-              _antrianAktifApotik = antrianLunas.firstWhere((a) => a.id == previousActiveId);
+              antrianAktifApotik = antrianLunas.firstWhere((a) => a.id == previousActiveId);
               if (!silent) {
-                debugPrint('âœ… [Petugas] Antrian aktif dipertahankan: ${_antrianAktifApotik!.nomorAntrian}');
+                debugPrint('âœ… [Petugas] Antrian aktif dipertahankan: ${antrianAktifApotik!.nomorAntrian}');
               }
             } else {
               // Antrian aktif sebelumnya sudah selesai, set yang baru
@@ -107,7 +86,7 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
                 showAppSnackBar(context, 'Antrian berikutnya: ${antrianLunas.first.nomorAntrian}');
               }
             }
-          } else if (_antrianAktifApotik == null) {
+          } else if (antrianAktifApotik == null) {
             // Belum ada antrian aktif, set yang pertama
             _updateStatusToSedangDilayani(antrianLunas.first.id!);
             if (!silent) {
@@ -116,7 +95,7 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
           }
         } else {
           // Tidak ada antrian, reset antrian aktif
-          _antrianAktifApotik = null;
+          antrianAktifApotik = null;
         }
         
         // Log untuk debugging
@@ -130,13 +109,13 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
       // Silent error - data kosong akan ditampilkan
       if (mounted) {
         setState(() {
-          if (_antrianRsList.isEmpty) {
-            _antrianRsList = [];
-            _allAntrianToday = [];
-            _errorMessage = e.toString().replaceAll('Exception: ', '');
+          if (antrianRsList.isEmpty) {
+            antrianRsList = [];
+            allAntrianToday = [];
+            errorMessage = e.toString().replaceAll('Exception: ', '');
           }
-          _isRefreshing = false;
-          _isLoading = false;
+          isRefreshing = false;
+          isLoading = false;
         });
         
         if (!silent) {
@@ -148,40 +127,28 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
   
   void _updateStatusToSedangDilayani(int idAntrian) {
     setState(() {
-      final index = _antrianRsList.indexWhere((a) => a.id == idAntrian);
+      final index = antrianRsList.indexWhere((a) => a.id == idAntrian);
       if (index != -1) {
-        _antrianAktifApotik = _antrianRsList[index];
+        antrianAktifApotik = antrianRsList[index];
       }
     });
     debugPrint('âœ… Antrian ID $idAntrian set sebagai aktif (local only)');
   }
 
-  int get _jumlahBelumDipanggil {
-    if (_antrianAktifApotik == null) {
-      return _antrianRsList.length;
-    }
-    return _antrianRsList.length - 1;
-  }
-
   List<AntrianRs> get _antrianMenunggu {
-    if (_antrianAktifApotik == null) {
-      return _antrianRsList.where((a) => !_skippedAntrianIds.contains(a.id)).toList();
+    if (antrianAktifApotik == null) {
+      return antrianRsList.where((a) => !_skippedAntrianIds.contains(a.id)).toList();
     }
-    return _antrianRsList.where((a) => a.id != _antrianAktifApotik!.id && !_skippedAntrianIds.contains(a.id)).toList();
+    return antrianRsList.where((a) => a.id != antrianAktifApotik!.id && !_skippedAntrianIds.contains(a.id)).toList();
   }
 
   // Antrian yang di-skip — ditampilkan terpisah di bawah
   List<AntrianRs> get _antrianDilewati {
-    return _antrianRsList.where((a) => _skippedAntrianIds.contains(a.id)).toList();
-  }
-
-  int get _jumlahSelesai {
-    final dariApi = _allAntrianToday.where((a) => a.status?.toLowerCase() == 'obat_diserahkan').length;
-    return dariApi + _antrianSelesai.length;
+    return antrianRsList.where((a) => _skippedAntrianIds.contains(a.id)).toList();
   }
 
   Future<void> _panggilUlang(BuildContext context) async {
-    if (_antrianAktifApotik == null) {
+    if (antrianAktifApotik == null) {
       showAppSnackBar(context, 'Tidak ada antrian yang sedang dipanggil');
       return;
     }
@@ -189,32 +156,32 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
     if (!context.mounted) return;
     showAppSnackBar(
       context,
-      'Memanggil ${_antrianAktifApotik!.namaPasien} (${_antrianAktifApotik!.nomorAntrian})',
+      'Memanggil ${antrianAktifApotik!.namaPasien} (${antrianAktifApotik!.nomorAntrian})',
     );
   }
 
   Future<void> _skipAntrian(BuildContext context) async {
-    if (_antrianAktifApotik == null) return;
+    if (antrianAktifApotik == null) return;
 
     // Skip LOCAL ONLY - tidak update API karena status "skip" tidak valid
     setState(() {
       // Tandai antrian aktif sebagai di-skip
-      final current = _antrianAktifApotik!;
+      final current = antrianAktifApotik!;
       _skippedAntrianIds.add(current.id!);
       
       // Pindahkan antrian di-skip ke urutan terakhir
-      _antrianRsList.removeWhere((a) => a.id == current.id);
-      _antrianRsList.add(current);
+      antrianRsList.removeWhere((a) => a.id == current.id);
+      antrianRsList.add(current);
       
       // Set antrian berikutnya (non-skipped) sebagai aktif
-      final nonSkipped = _antrianRsList.where((a) => !_skippedAntrianIds.contains(a.id)).toList();
+      final nonSkipped = antrianRsList.where((a) => !_skippedAntrianIds.contains(a.id)).toList();
       if (nonSkipped.isNotEmpty) {
-        _antrianAktifApotik = nonSkipped.first;
-      } else if (_antrianRsList.isNotEmpty) {
+        antrianAktifApotik = nonSkipped.first;
+      } else if (antrianRsList.isNotEmpty) {
         // Semua di-skip, ambil yang pertama
-        _antrianAktifApotik = _antrianRsList.first;
+        antrianAktifApotik = antrianRsList.first;
       } else {
-        _antrianAktifApotik = null;
+        antrianAktifApotik = null;
       }
     });
 
@@ -227,30 +194,30 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
   }
 
   Future<void> _selesaiDanLanjut(BuildContext context) async {
-    if (_antrianAktifApotik == null) return;
+    if (antrianAktifApotik == null) return;
 
     try {
       // Update status ke "obat_diserahkan" di API
-      final updatedAntrian = await _antrianRsService.updateStatusAntrian(_antrianAktifApotik!.id!, 'obat_diserahkan');
+      final updatedAntrian = await antrianRsService.updateStatusAntrian(antrianAktifApotik!.id!, StatusConstants.obatDiserahkan);
       
       // Pindahkan ke list selesai
       setState(() {
-        _antrianSelesai.add(updatedAntrian);
+        antrianSelesai.add(updatedAntrian);
         
         // Hapus antrian aktif dari list
-        _antrianRsList.removeWhere((a) => a.id == updatedAntrian.id);
+        antrianRsList.removeWhere((a) => a.id == updatedAntrian.id);
         
         // Update di allAntrianToday juga
-        final indexAll = _allAntrianToday.indexWhere((a) => a.id == updatedAntrian.id);
+        final indexAll = allAntrianToday.indexWhere((a) => a.id == updatedAntrian.id);
         if (indexAll != -1) {
-          _allAntrianToday[indexAll] = updatedAntrian;
+          allAntrianToday[indexAll] = updatedAntrian;
         }
         
         // Set antrian berikutnya sebagai aktif (LOCAL ONLY)
-        if (_antrianRsList.isNotEmpty) {
-          _antrianAktifApotik = _antrianRsList.first;
+        if (antrianRsList.isNotEmpty) {
+          antrianAktifApotik = antrianRsList.first;
         } else {
-          _antrianAktifApotik = null;
+          antrianAktifApotik = null;
         }
       });
 
@@ -278,10 +245,10 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
     // Jika antrian sebelumnya di-skip, unskip
     _skippedAntrianIds.remove(antrian.id);
     setState(() {
-      _antrianAktifApotik = antrian;
+      antrianAktifApotik = antrian;
       // Pindahkan antrian ini ke posisi pertama
-      _antrianRsList.removeWhere((a) => a.id == antrian.id);
-      _antrianRsList.insert(0, antrian);
+      antrianRsList.removeWhere((a) => a.id == antrian.id);
+      antrianRsList.insert(0, antrian);
     });
     
     if (!mounted) return;
@@ -296,7 +263,7 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
       context: context,
       builder: (context) => AntrianDetailDialog(
         antrian: antrian,
-        isCurrentlyActive: _antrianAktifApotik?.id == antrian.id,
+        isCurrentlyActive: antrianAktifApotik?.id == antrian.id,
         onPanggilSekarang: _panggilAntrianSekarang,
       ),
     );
@@ -306,19 +273,19 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
   Widget build(BuildContext context) {
     final upcomingAntrian = _antrianMenunggu;
 
-    if (_isLoading) {
+    if (isLoading) {
       return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
 
-    if (_errorMessage != null && _antrianRsList.isEmpty) {
+    if (errorMessage != null && antrianRsList.isEmpty) {
       return DashboardErrorState(
-        errorMessage: _errorMessage!,
-        onRetry: _fetchAntrianData,
+        errorMessage: errorMessage!,
+        onRetry: fetchData,
       );
     }
 
     return RefreshIndicator(
-      onRefresh: _fetchAntrianData,
+      onRefresh: fetchData,
       color: AppColors.primary,
       child: SafeArea(
         child: CustomScrollView(
@@ -328,7 +295,7 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                TodayQueueCard(totalAntrian: _antrianRsList.length),
+                TodayQueueCard(totalAntrian: antrianRsList.length),
                 const SizedBox(height: 16),
                 // Card Belum Di Panggil dan Selesai
                 IntrinsicHeight(
@@ -337,7 +304,7 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
                       Expanded(
                         child: StatusSummaryCard(
                           title: 'BELUM DI PANGGIL',
-                          count: '$_jumlahBelumDipanggil',
+                          count: '$jumlahBelumDipanggil',
                           color: AppColors.warning,
                           icon: Icons.hourglass_bottom_rounded,
                         ),
@@ -346,7 +313,7 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
                       Expanded(
                         child: StatusSummaryCard(
                           title: 'SELESAI',
-                          count: '$_jumlahSelesai',
+                          count: '$jumlahSelesai',
                           color: AppColors.teal,
                           icon: Icons.check_circle_outline_rounded,
                         ),
@@ -366,8 +333,8 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               sliver: SliverToBoxAdapter(
                 child: EmptyQueueState(
-                  isRefreshing: _isRefreshing,
-                  onRefresh: _fetchAntrianData,
+                  isRefreshing: isRefreshing,
+                  onRefresh: fetchData,
                 ),
               ),
             )
@@ -427,7 +394,7 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> {
   }
 
   Widget _buildCallingCard(BuildContext context) {
-    final current = _antrianAktifApotik;
+    final current = antrianAktifApotik;
 
     if (current == null) {
       return const CallingCard.empty();

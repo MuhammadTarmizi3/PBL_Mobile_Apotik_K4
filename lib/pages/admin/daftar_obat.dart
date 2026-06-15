@@ -7,6 +7,8 @@ import '../../providers/provider_obat.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/helper_icon_obat.dart';
 import '../../core/utils/formatter.dart';
+import '../../core/widgets/search_bar.dart';
+import '../../core/widgets/local_data_notice.dart';
 import 'tambah_obat.dart';
 import 'edit_obat.dart';
 
@@ -58,51 +60,16 @@ class ObatAdminPageState extends State<ObatAdminPage> {
       child: Column(
         children: [
           if (provider.isUsingLocalData)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline_rounded, size: 18, color: AppColors.warning),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      provider.localDataNotice,
-                      style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.textDark),
-                    ),
-                  ),
-                ],
-              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: LocalDataNotice(message: provider.localDataNotice),
             ),
-          // Search
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: TextField(
+            child: AppSearchBar(
               controller: _searchController,
               onChanged: (v) => provider.setSearchQuery(v),
-              style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Cari Nama Obat',
-                hintStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: AppColors.onSurfaceMuted),
-                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.onSurfaceMuted),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.close_rounded, color: AppColors.onSurfaceMuted, size: 18),
-                        onPressed: () { _searchController.clear(); provider.setSearchQuery(''); },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryLight, width: 1.5)),
-              ),
+              hintText: 'Cari Nama Obat',
             ),
           ),
 

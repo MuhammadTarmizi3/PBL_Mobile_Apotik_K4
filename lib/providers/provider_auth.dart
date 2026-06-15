@@ -4,14 +4,16 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../services/service_auth.dart';
 import '../models/user.dart';
+import '../core/constants/storage_keys.dart';
+import '../core/constants/role_constants.dart';
 
 // Provider autentikasi — login, logout, session management via secure storage
 class AuthProvider with ChangeNotifier {
-  static const String _storageKeyEmail = 'auth_email';
-  static const String _storageKeyRole = 'auth_role';
-  static const String _storageKeyToken = 'auth_token';
-  static const String _storageKeyUserId = 'auth_user_id';
-  static const String _storageKeyExpiredAt = 'auth_expired_at';
+  static const String _storageKeyEmail = StorageKeys.authEmail;
+  static const String _storageKeyRole = StorageKeys.authRole;
+  static const String _storageKeyToken = StorageKeys.authToken;
+  static const String _storageKeyUserId = StorageKeys.authUserId;
+  static const String _storageKeyExpiredAt = StorageKeys.authExpiredAt;
 
   // Akun demo sudah tidak dipakai, login sekarang via API
 
@@ -37,18 +39,9 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _role != null && _token != null;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  bool get isAdmin =>
-      _role == 'admin' ||
-      _role == 'superadmin' ||
-      _role == 'admin_apotik';
-  bool get isApoteker => _role == 'apoteker' || _role == 'admin_apotik';
-  bool get isPetugas =>
-      _role == 'petugas' ||
-      _role == 'admin_perawat' ||
-      _role == 'apoteker' ||
-      _role == 'admin_apotik' ||
-      _role == 'perawat' ||
-      _role == 'dokter';
+  bool get isAdmin => RoleConstants.isAdmin(_role);
+  bool get isApoteker => _role == RoleConstants.apoteker || _role == RoleConstants.adminApotik;
+  bool get isPetugas => RoleConstants.isPetugas(_role);
 
   // Muat session dari secure storage saat app dibuka
   Future<void> init() async {

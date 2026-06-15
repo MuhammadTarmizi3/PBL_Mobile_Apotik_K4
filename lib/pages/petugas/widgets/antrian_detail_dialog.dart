@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/dialog_row.dart';
 import '../../../models/antrian_rs.dart';
 
 // Dialog popup detail antrian RS
@@ -25,11 +26,11 @@ class AntrianDetailDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDialogRow('Pasien', antrian.namaPasien ?? '-'),
-          _buildDialogRow('ID Pasien', antrian.idPasien?.toString() ?? '-'),
-          _buildDialogRow('Unit', antrian.namaUnit ?? '-'),
-          _buildDialogRow('Status', antrian.status ?? '-'),
-          _buildDialogRow('Waktu', antrian.formattedCreatedAt),
+          DialogInfoRow(label: 'Pasien', value: antrian.namaPasien ?? '-'),
+          DialogInfoRow(label: 'ID Pasien', value: antrian.idPasien?.toString() ?? '-'),
+          DialogInfoRow(label: 'Unit', value: antrian.namaUnit ?? '-'),
+          DialogInfoRow(label: 'Status', value: antrian.status ?? '-'),
+          DialogInfoRow(label: 'Waktu', value: antrian.formattedCreatedAt),
         ],
       ),
       actions: [
@@ -51,37 +52,6 @@ class AntrianDetailDialog extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildDialogRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

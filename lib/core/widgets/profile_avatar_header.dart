@@ -1,21 +1,19 @@
-// Header profil dengan foto, nama, dan jabatan
+// Header profil dengan avatar foto lokal, nama, dan jabatan
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import '../../constants/app_colors.dart';
+import '../constants/app_colors.dart';
 
-// Header profil — avatar, nama, dan role user
-class ProfileHeader extends StatelessWidget {
+class ProfileAvatarHeader extends StatelessWidget {
   final String displayName;
   final String roleDisplay;
-  final String avatarUrl;
-  final double avatarRadius;
+  final String photoAsset;
+  final String? emailFallback;
 
-  const ProfileHeader({
+  const ProfileAvatarHeader({
     super.key,
     required this.displayName,
     required this.roleDisplay,
-    required this.avatarUrl,
-    this.avatarRadius = 96,
+    required this.photoAsset,
+    this.emailFallback,
   });
 
   @override
@@ -24,8 +22,8 @@ class ProfileHeader extends StatelessWidget {
       children: [
         const SizedBox(height: 16),
         Container(
-          width: avatarRadius,
-          height: avatarRadius,
+          width: 96,
+          height: 96,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.surface, width: 3),
@@ -36,9 +34,27 @@ class ProfileHeader extends StatelessWidget {
                 offset: const Offset(0, 4),
               ),
             ],
-            image: DecorationImage(
-              image: CachedNetworkImageProvider(avatarUrl),
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              photoAsset,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                final initial = (emailFallback ?? 'A')[0].toUpperCase();
+                return Container(
+                  color: AppColors.primary,
+                  alignment: Alignment.center,
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
