@@ -168,27 +168,6 @@ class _LoginPageState extends State<LoginPage> {
                   fillColor: AppColors.surface,
                 ),
               ),
-              const SizedBox(height: 12),
-
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text(
-                    'Lupa Kata Sandi',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.accent,
-                    ),
-                  ),
-                ),
-              ),
               const SizedBox(height: 16),
 
               Row(

@@ -53,16 +53,8 @@ class ObatValidator {
     return null;
   }
 
-  // Validasi ID obat (khusus tambah obat — harus angka)
-  static String? validateIdObat(String? value) {
-    if (value == null || value.trim().isEmpty) return 'ID Obat tidak boleh kosong';
-    if (int.tryParse(value.trim()) == null) return 'ID Obat harus berupa angka';
-    return null;
-  }
-
   // Validasi berurutan lengkap untuk tambah obat — return error pertama atau null
   static String? validateTambahObat({
-    required String? idObat,
     required String? namaObat,
     required bool jenisSelected,
     required String? stok,
@@ -70,8 +62,7 @@ class ObatValidator {
     required String? hargaBeli,
     required String? hargaJual,
   }) {
-    return validateIdObat(idObat) ??
-        validateNama(namaObat) ??
+    return validateNama(namaObat) ??
         validateJenis(jenisSelected) ??
         validateStok(stok) ??
         validateTanggalKadaluwarsa(tanggalKadaluwarsa) ??

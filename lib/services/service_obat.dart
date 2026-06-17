@@ -77,7 +77,7 @@ class ObatService {
     try {
       final response = await _dioClient.post(
         ApiConstants.obat,
-        data: obat.toJson(),
+        data: obat.toJsonForCreate(),
       );
 
       if (response.statusCode == 201) {

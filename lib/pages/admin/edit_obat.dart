@@ -173,10 +173,7 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> with ObatFormMixi
               elevation: 0,
               scrolledUnderElevation: 0,
               centerTitle: true,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textDark),
-                onPressed: _berhasil ? null : _konfirmasiBatal,
-              ),
+              automaticallyImplyLeading: false,
               title: const Text('Edit Data Obat', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textDark)),
               shape: const Border(bottom: BorderSide(color: AppColors.border)),
             ),

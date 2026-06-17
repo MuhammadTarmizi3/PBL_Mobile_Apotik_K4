@@ -426,7 +426,7 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
       children: [
         Scaffold(
           backgroundColor: AppColors.surface,
-          appBar: const CustomAppBar(title: 'E-Resep', centerTitle: true),
+          appBar: const CustomAppBar(title: 'E-Resep', centerTitle: true, showBackButton: false),
           bottomNavigationBar: (_berhasil || _isSaving)
               ? null
               : EresepBottomActions(

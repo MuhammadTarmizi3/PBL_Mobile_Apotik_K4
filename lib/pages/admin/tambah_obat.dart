@@ -23,7 +23,6 @@ class TambahObatAdminPage extends StatefulWidget {
 
 class _TambahObatAdminPageState extends State<TambahObatAdminPage> with ObatFormMixin<TambahObatAdminPage> {
   final _obatService  = ObatService();
-  final _idCtrl        = TextEditingController();
   final _namaCtrl      = TextEditingController();
   final _stokCtrl      = TextEditingController();
   final _hargaBeliCtrl = TextEditingController();
@@ -72,7 +71,7 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> with ObatForm
 
   @override
   void dispose() {
-    _idCtrl.dispose(); _namaCtrl.dispose(); _stokCtrl.dispose();
+    _namaCtrl.dispose(); _stokCtrl.dispose();
     _hargaBeliCtrl.dispose(); _hargaJualCtrl.dispose();
     super.dispose();
   }
@@ -80,7 +79,6 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> with ObatForm
   // ── Tahap 1: Validasi berurutan — delegate ke ObatValidator terpusat ──────
   bool _validasi() {
     final error = ObatValidator.validateTambahObat(
-      idObat: _idCtrl.text,
       namaObat: _namaCtrl.text,
       jenisSelected: _selectedJenis != null,
       stok: _stokCtrl.text,
@@ -109,7 +107,7 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> with ObatForm
     setState(() => _loading = true);
     try {
       final obatBaru = ObatModel(
-        idObat: int.tryParse(_idCtrl.text.trim()) ?? 0,
+        idObat: 0, // digenerate otomatis oleh backend
         namaObat: _namaCtrl.text.trim(),
         idJenisObat: _selectedJenis!.idJenisObat,
         namaJenisObat: _selectedJenis!.jenisObat,
@@ -170,8 +168,6 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> with ObatForm
                 padding: const EdgeInsets.all(16),
                 child: Column(children: [
                   ObatFormCard(children: [
-                    formField(label: 'ID OBAT', ctrl: _idCtrl, hint: 'Masukkan ID Obat', type: TextInputType.number, fmt: [FilteringTextInputFormatter.digitsOnly]),
-                    const SizedBox(height: 16),
                     formField(label: 'NAMA OBAT', ctrl: _namaCtrl, hint: 'Masukkan Nama Obat'),
                     const SizedBox(height: 16),
                     jenisDropdown(),
@@ -223,10 +219,7 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> with ObatForm
     elevation: 0,
     scrolledUnderElevation: 0,
     centerTitle: true,
-    leading: IconButton(
-      icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textDark),
-      onPressed: _berhasil ? null : _konfirmasiBatal,
-    ),
+    automaticallyImplyLeading: false,
     title: Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textDark)),
     shape: const Border(bottom: BorderSide(color: AppColors.border)),
   );
