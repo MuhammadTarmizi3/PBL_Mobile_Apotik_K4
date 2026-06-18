@@ -1,7 +1,7 @@
 // Warna aplikasi — brand, semantic, dan utility colors untuk konsistensi UI
 import 'package:flutter/material.dart';
 
-// Class warna aplikasi — sesuaikan dengan Figma jika ada nilai resmi
+// Class warna aplikasi  sesuaikan dengan Figma jika ada nilai resmi
 class AppColors {
   AppColors._();
 

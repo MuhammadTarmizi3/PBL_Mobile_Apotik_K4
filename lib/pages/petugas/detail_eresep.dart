@@ -136,6 +136,11 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
   }
 
   void _increment(ObatApotek obat) {
+    // Blok obat kadaluarsa sejak awal interaksi
+    if (obat.isExpired) {
+      showAppSnackBar(context, 'Obat kadaluarsa tidak dapat diambil', backgroundColor: AppColors.pureRed);
+      return;
+    }
     final int? resepJumlah = _getResepJumlah(obat);
     if (resepJumlah == null) {
       showAppSnackBar(context, 'Obat ini tidak ada dalam resep dokter', backgroundColor: AppColors.pureRed);
@@ -170,7 +175,13 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
 
     if (nilai < 0) nilai = 0;
 
-    if (resepJumlah != null && nilai > resepJumlah) {
+    // Obat kadaluarsa tidak boleh diambil — reset ke 0
+    if (obat.isExpired && nilai > 0) {
+      if (showSnackBar) {
+        showAppSnackBar(context, '${obat.namaObat} sudah kadaluarsa, tidak dapat diambil', backgroundColor: AppColors.pureRed);
+      }
+      nilai = 0;
+    } else if (resepJumlah != null && nilai > resepJumlah) {
       if (showSnackBar) {
         showAppSnackBar(context, 'Melebihi jumlah yang diminta dalam eResep', backgroundColor: AppColors.pureRed);
       }
@@ -248,6 +259,11 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
     return kurang;
   }
 
+  // Tahap 3: cek apakah ada obat kadaluarsa yang diambil
+  List<ObatApotek> _validasiKadaluarsa() {
+    return _daftarObat.where((o) => o.jumlahDiambil > 0 && o.isExpired).toList();
+  }
+
   void _showDialogStokTidakCukup(List<Map<String, dynamic>> kurangStok) {
     showDialog(
       context: context,
@@ -260,7 +276,7 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
             ...kurangStok.map((item) => Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
-                'â€¢ ${item['nama']} â€” diminta: ${item['diminta']}, stok tersedia: ${item['stok']}',
+                '\u2022 ${item['nama']} \u2014 diminta: ${item['diminta']}, stok tersedia: ${item['stok']}',
               ),
             )),
             const SizedBox(height: 12),
@@ -274,6 +290,46 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Dialog obat kadaluarsa — tampilkan daftar obat yang sudah expired
+  void _showDialogObatKadaluarsa(List<ObatApotek> obatExpired) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Obat Kadaluarsa',
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Obat berikut sudah kadaluarsa dan tidak dapat disimpan:',
+              style: TextStyle(fontFamily: 'Poppins', fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            ...obatExpired.map((o) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                '\u2022 ${o.namaObat} (Exp: ${o.tanggalKadaluwarsa!.month}/${o.tanggalKadaluwarsa!.year})',
+                style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: AppColors.pureRed),
+              ),
+            )),
+            const SizedBox(height: 12),
+            const Text(
+              'Silakan hapus obat kadaluarsa dari pengambilan atau ganti dengan obat yang masih layak.',
+              style: TextStyle(fontFamily: 'Poppins', fontStyle: FontStyle.italic, fontSize: 13),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(fontFamily: 'Poppins')),
           ),
         ],
       ),
@@ -398,11 +454,18 @@ class _DetailEResepPageState extends State<DetailEResepPage> {
       return;
     }
 
-    // Tahap 3: konfirmasi simpan
+    // Tahap 3: validasi obat kadaluarsa
+    final obatExpired = _validasiKadaluarsa();
+    if (obatExpired.isNotEmpty) {
+      _showDialogObatKadaluarsa(obatExpired);
+      return;
+    }
+
+    // Tahap 4: konfirmasi simpan
     final konfirmasi = await _showDialogKonfirmasi();
     if (konfirmasi != true) return;
 
-    // Tahap 4: eksekusi simpan
+    // Tahap 5: eksekusi simpan
     await _eksekusiSimpan();
   }
 

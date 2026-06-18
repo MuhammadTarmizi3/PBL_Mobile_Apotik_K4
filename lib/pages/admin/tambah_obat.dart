@@ -29,6 +29,7 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> with ObatForm
   final _hargaJualCtrl = TextEditingController();
   DateTime? _selectedDate;
   bool _loading = false;
+  bool _submitting = false; // penjaga double-submit
   bool _berhasil = false;
   bool _siapTutupPopup = false;
   ObatModel? _obatBaru;
@@ -100,10 +101,12 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> with ObatForm
 
   // ── Tahap 3: Eksekusi API ───────────────────────────────────────────────────
   void _simpan() async {
+    if (_submitting) return; // cegah double-tap
     if (!_validasi()) return;
     final yakin = await _konfirmasiSimpan();
     if (!yakin || !mounted) return;
 
+    _submitting = true;
     setState(() => _loading = true);
     try {
       final obatBaru = ObatModel(
@@ -134,6 +137,7 @@ class _TambahObatAdminPageState extends State<TambahObatAdminPage> with ObatForm
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      _submitting = false;
       _showDialogGagal();
     }
   }

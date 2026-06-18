@@ -1,5 +1,6 @@
 // Service untuk CRUD obat via API (dengan relasi jenis_obat)
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../core/constants/api_constants.dart';
 import '../core/network/api_error_handler.dart';
@@ -75,9 +76,12 @@ class ObatService {
   // Tambah obat baru
   Future<ObatModel> createObat(ObatModel obat) async {
     try {
+      final payload = obat.toJsonForCreate();
+      // Debug: log payload yang dikirim ke backend
+      debugPrint('[createObat] Payload dikirim: $payload');
       final response = await _dioClient.post(
         ApiConstants.obat,
-        data: obat.toJsonForCreate(),
+        data: payload,
       );
 
       if (response.statusCode == 201) {
@@ -97,9 +101,12 @@ class ObatService {
   // Update data obat
   Future<ObatModel> updateObat(int id, ObatModel obat) async {
     try {
+      final payload = obat.toJsonForCreate();
+      // Debug: log payload yang dikirim ke backend
+      debugPrint('[updateObat] Payload dikirim (id=$id): $payload');
       final response = await _dioClient.put(
         '${ApiConstants.obat}/$id',
-        data: obat.toJsonForCreate(),
+        data: payload,
       );
 
       if (response.statusCode == 200) {

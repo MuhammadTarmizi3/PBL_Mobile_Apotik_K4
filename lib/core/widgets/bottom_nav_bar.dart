@@ -17,34 +17,36 @@ class AnimatedBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 78,
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.border, width: 1)),
       ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: onTap,
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textMuted,
-        selectedLabelStyle: const TextStyle(
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
+      child: SafeArea(
+        top: false,
+        child: BottomNavigationBar(
+          currentIndex: currentIndex,
+          onTap: onTap,
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.textMuted,
+          selectedLabelStyle: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 12,
+          ),
+          items: items.asMap().entries.map((entry) {
+            return BottomNavigationBarItem(
+              icon: _NavIcon(icon: entry.value.icon, isActive: currentIndex == entry.key),
+              label: entry.value.label,
+            );
+          }).toList(),
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 12,
-        ),
-        items: items.asMap().entries.map((entry) {
-          return BottomNavigationBarItem(
-            icon: _NavIcon(icon: entry.value.icon, isActive: currentIndex == entry.key),
-            label: entry.value.label,
-          );
-        }).toList(),
       ),
     );
   }

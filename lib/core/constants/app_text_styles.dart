@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 
-// Class style teks dengan font Poppins — heading, body, caption
+// Class style teks dengan font Poppins heading, body, caption
 class AppTextStyles {
   static const TextStyle heading1 = TextStyle(
     fontSize: 28,

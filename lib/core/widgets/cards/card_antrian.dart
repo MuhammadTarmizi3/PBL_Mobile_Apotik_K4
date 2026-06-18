@@ -53,7 +53,9 @@ class AntrianCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'R-$idResep â€¢ $statusLabel',
+                  idResep.isEmpty || idResep == '-'
+                      ? statusLabel
+                      : 'R-$idResep \u2022 $statusLabel',
                   style: const TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 14,

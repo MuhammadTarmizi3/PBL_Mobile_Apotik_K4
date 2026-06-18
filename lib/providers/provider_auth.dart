@@ -1,4 +1,4 @@
-﻿// Provider state management untuk autentikasi user
+// Provider state management untuk autentikasi user
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -177,7 +177,7 @@ class AuthProvider with ChangeNotifier {
         _userId = _userProfile!.id;
       }
 
-      debugPrint('âœ… User profile fetched: ${_userProfile?.displayName}');
+      debugPrint('[OK] User profile fetched: ${_userProfile?.displayName}');
       
       _isLoading = false;
       notifyListeners();

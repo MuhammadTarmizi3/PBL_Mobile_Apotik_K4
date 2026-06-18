@@ -1,4 +1,4 @@
-﻿// Provider state management untuk data e-Resep
+// Provider state management untuk data e-Resep
 import 'package:flutter/material.dart';
 
 import '../core/constants/api_constants.dart';
@@ -26,7 +26,7 @@ class EResepProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isUsingLocalData => !ApiConstants.apotikApiEnabled;
   String get localDataNotice =>
-      'API modul apotik belum tersedia â€” menampilkan data contoh.';
+      'API modul apotik belum tersedia -- menampilkan data contoh.';
 
   // Constructor utama — fetch API atau load dummy sesuai flag
   EResepProvider() {

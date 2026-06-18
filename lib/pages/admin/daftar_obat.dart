@@ -21,16 +21,31 @@ class ObatAdminPage extends StatefulWidget {
   ObatAdminPageState createState() => ObatAdminPageState();
 }
 
-class ObatAdminPageState extends State<ObatAdminPage> {
+class ObatAdminPageState extends State<ObatAdminPage> with WidgetsBindingObserver {
   final _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
 
-  // Public â€” dipanggil FAB dari MainAdminPage
+  // Auto-refresh saat app kembali ke foreground (resume)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<ObatProvider>().fetchObat();
+    }
+  }
+
+  // Public â€“ dipanggil FAB dari MainAdminPage
   Future<void> navigasiTambahObat() async {
     final result = await Navigator.push<ObatModel>(
       context,
@@ -39,8 +54,10 @@ class ObatAdminPageState extends State<ObatAdminPage> {
     if (result != null && mounted) {
       context.read<ObatProvider>().addObat(result);
     }
+    // Auto-refresh setelah kembali dari halaman tambah (pastikan data sinkron)
+    if (mounted) context.read<ObatProvider>().fetchObat();
   }
-
+  
   Future<void> _bukaEdit(ObatModel obat) async {
     final result = await Navigator.push<ObatModel>(
       context,
@@ -49,6 +66,8 @@ class ObatAdminPageState extends State<ObatAdminPage> {
     if (result != null && mounted) {
       context.read<ObatProvider>().updateObat(result);
     }
+    // Auto-refresh setelah kembali dari halaman edit (pastikan data sinkron)
+    if (mounted) context.read<ObatProvider>().fetchObat();
   }
 
   @override

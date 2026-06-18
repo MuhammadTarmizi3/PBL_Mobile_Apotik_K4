@@ -1,4 +1,4 @@
-﻿// Dashboard admin — calling antrian, auto-refresh, status ringkasan
+// Dashboard admin — calling antrian, auto-refresh, status ringkasan
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
@@ -69,15 +69,15 @@ class _DashboardAdminPageState extends State<DashboardAdminPage> with DashboardF
             }
           } else if (antrianAktifApotik == null) {
             _setAntrianAktif(antrianLunas.first);
-            if (!silent) debugPrint('âœ… Antrian pertama otomatis aktif: ${antrianLunas.first.nomorAntrian}');
+            if (!silent) debugPrint('[OK] Antrian pertama otomatis aktif: ${antrianLunas.first.nomorAntrian}');
           }
         } else {
           antrianAktifApotik = null;
         }
         if (silent) {
-          debugPrint('ðŸ”„ Silent refresh: ${antrianLunas.length} antrian lunas');
+          debugPrint('[REFRESH] Silent refresh: ${antrianLunas.length} antrian lunas');
         } else {
-          debugPrint('ðŸ“¥ Data loaded: ${antrianLunas.length} antrian lunas, ${allAntrian.length} total');
+          debugPrint('[LOAD] Data loaded: ${antrianLunas.length} antrian lunas, ${allAntrian.length} total');
         }
       }
     } catch (e) {
@@ -89,7 +89,7 @@ class _DashboardAdminPageState extends State<DashboardAdminPage> with DashboardF
           isRefreshing = false;
           isLoading = false;
         });
-        if (!silent) debugPrint('âŒ Error fetching data: $e');
+        if (!silent) debugPrint('[ERROR] Error fetching data: $e');
       }
     }
   }

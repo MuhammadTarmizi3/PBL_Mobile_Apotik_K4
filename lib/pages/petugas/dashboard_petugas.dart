@@ -1,4 +1,4 @@
-﻿// Dashboard petugas — calling antrian, queue list, auto-refresh
+// Dashboard petugas — calling antrian, queue list, auto-refresh
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -77,7 +77,7 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> with Dashbo
               // Pertahankan antrian aktif yang sama
               antrianAktifApotik = antrianLunas.firstWhere((a) => a.id == previousActiveId);
               if (!silent) {
-                debugPrint('âœ… [Petugas] Antrian aktif dipertahankan: ${antrianAktifApotik!.nomorAntrian}');
+                debugPrint('[OK] [Petugas] Antrian aktif dipertahankan: ${antrianAktifApotik!.nomorAntrian}');
               }
             } else {
               // Antrian aktif sebelumnya sudah selesai, set yang baru
@@ -90,7 +90,7 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> with Dashbo
             // Belum ada antrian aktif, set yang pertama
             _updateStatusToSedangDilayani(antrianLunas.first.id!);
             if (!silent) {
-              debugPrint('âœ… [Petugas] Antrian pertama otomatis aktif: ${antrianLunas.first.nomorAntrian}');
+              debugPrint('[OK] [Petugas] Antrian pertama otomatis aktif: ${antrianLunas.first.nomorAntrian}');
             }
           }
         } else {
@@ -100,9 +100,9 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> with Dashbo
         
         // Log untuk debugging
         if (silent) {
-          debugPrint('ðŸ”„ [Petugas] Silent refresh: ${antrianLunas.length} antrian lunas');
+          debugPrint('[REFRESH] [Petugas] Silent refresh: ${antrianLunas.length} antrian lunas');
         } else {
-          debugPrint('ðŸ“¥ [Petugas] Data loaded: ${antrianLunas.length} antrian lunas, ${allAntrian.length} total');
+          debugPrint('[LOAD] [Petugas] Data loaded: ${antrianLunas.length} antrian lunas, ${allAntrian.length} total');
         }
       }
     } catch (e) {
@@ -119,7 +119,7 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> with Dashbo
         });
         
         if (!silent) {
-          debugPrint('âŒ [Petugas] Error fetching data: $e');
+          debugPrint('[ERROR] [Petugas] Error fetching data: $e');
         }
       }
     }
@@ -132,7 +132,7 @@ class _DashboardPetugasPageState extends State<DashboardPetugasPage> with Dashbo
         antrianAktifApotik = antrianRsList[index];
       }
     });
-    debugPrint('âœ… Antrian ID $idAntrian set sebagai aktif (local only)');
+    debugPrint('[OK] Antrian ID $idAntrian set sebagai aktif (local only)');
   }
 
   List<AntrianRs> get _antrianMenunggu {

@@ -33,13 +33,16 @@ class ObatCard extends StatelessWidget {
     final int stok = obat.stok;
     final bool belumDiambil = obat.belumDiambil;
     final bool atMax = resepMax != null && jumlahDiambil >= resepMax!;
+    final bool expired = obat.isExpired;
     final bool notInResep = resepMax == null;
+    final bool plusDisabled = atMax || expired || notInResep;
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: expired ? AppColors.pureRed.withValues(alpha: 0.04) : AppColors.surface,
         borderRadius: BorderRadius.circular(12),
+        border: expired ? Border.all(color: AppColors.pureRed.withValues(alpha: 0.4), width: 1.5) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -104,16 +107,39 @@ class ObatCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textMuted),
+              Icon(Icons.calendar_today_outlined, size: 12, color: expired ? AppColors.pureRed : AppColors.textMuted),
               const SizedBox(width: 5),
               Text(
-                'Exp: ${obat.tanggalKadaluwarsa.month.toString().padLeft(2, '0')}/${obat.tanggalKadaluwarsa.year}',
-                style: const TextStyle(
+                obat.tanggalKadaluwarsa != null
+                    ? 'Exp: ${obat.tanggalKadaluwarsa!.month.toString().padLeft(2, '0')}/${obat.tanggalKadaluwarsa!.year}'
+                    : 'Exp: -',
+                style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 12,
-                  color: AppColors.textMuted,
+                  fontWeight: expired ? FontWeight.w600 : FontWeight.w400,
+                  color: expired ? AppColors.pureRed : AppColors.textMuted,
                 ),
               ),
+              if (expired) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.pureRed.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'KADALUARSA',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.pureRed,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 12),
@@ -171,13 +197,13 @@ class ObatCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              // Tombol plus
+              // Tombol plus — disabled saat sudah max, kadaluarsa, atau tidak dalam resep
               GestureDetector(
-                onTap: notInResep || atMax ? null : onIncrement,
+                onTap: plusDisabled ? null : onIncrement,
                 child: Icon(
                   Icons.add_circle_outline_rounded,
                   size: 28,
-                  color: (notInResep || atMax)
+                  color: plusDisabled
                       ? AppColors.neutral
                       : AppColors.teal,
                 ),

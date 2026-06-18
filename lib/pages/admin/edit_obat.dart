@@ -28,8 +28,9 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> with ObatFormMixi
   late final TextEditingController _stokCtrl;
   late final TextEditingController _hargaBeliCtrl;
   late final TextEditingController _hargaJualCtrl;
-  late DateTime _selectedDate;
+  DateTime? _selectedDate;
   bool _loading = false;
+  bool _submitting = false; // penjaga double-submit
   bool _berhasil = false;
   bool _siapTutupPopup = false;
   ObatModel? _updatedObat;
@@ -42,7 +43,7 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> with ObatFormMixi
 
   // ── ObatFormMixin abstract impl ──────────────────────────────────────────
   @override DateTime? get selectedDate => _selectedDate;
-  @override set selectedDate(DateTime? value) { if (value != null) _selectedDate = value; }
+  @override set selectedDate(DateTime? value) => _selectedDate = value;
   @override JenisObatModel? get selectedJenis => _selectedJenis;
   @override set selectedJenis(JenisObatModel? value) => _selectedJenis = value;
   @override List<JenisObatModel> get jenisObatList => _jenisObatList;
@@ -108,10 +109,12 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> with ObatFormMixi
 
   // ── Tahap 3: Eksekusi API ───────────────────────────────────────────────────
   void _simpan() async {
+    if (_submitting) return; // cegah double-tap
     if (!_validasi()) return;
     final yakin = await _konfirmasiSimpan();
     if (!yakin || !mounted) return;
 
+    _submitting = true;
     setState(() => _loading = true);
     try {
       _updatedObat = ObatModel(
@@ -142,6 +145,7 @@ class _EditObatAdminPageState extends State<EditObatAdminPage> with ObatFormMixi
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      _submitting = false;
       _showDialogGagal();
     }
   }

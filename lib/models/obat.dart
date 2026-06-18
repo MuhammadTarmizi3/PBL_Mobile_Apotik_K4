@@ -6,7 +6,7 @@ class ObatModel {
   final String? namaJenisObat; // resolved dari eager load relasi
   final int stok; // jumlah stok tersedia
   final String satuan; // satuan obat (tablet, kapsul, dll)
-  final DateTime tanggalKadaluwarsa; // tanggal expired
+  final DateTime? tanggalKadaluwarsa; // tanggal expired (null jika API tidak kirim)
   final double hargaBeli; // harga beli dari supplier
   final double hargaJual; // harga jual ke pasien
 
@@ -18,24 +18,26 @@ class ObatModel {
     this.namaJenisObat,
     required this.stok,
     required this.satuan,
-    required this.tanggalKadaluwarsa,
+    this.tanggalKadaluwarsa,
     required this.hargaBeli,
     required this.hargaJual,
   });
 
   // True jika obat akan expired dalam 90 hari
   bool get isExpiringSoon {
-    final diff = tanggalKadaluwarsa.difference(DateTime.now()).inDays;
+    if (tanggalKadaluwarsa == null) return false;
+    final diff = tanggalKadaluwarsa!.difference(DateTime.now()).inDays;
     return diff <= 90 && diff >= 0;
   }
 
   // True jika obat sudah expired
-  bool get isExpired => tanggalKadaluwarsa.isBefore(DateTime.now());
+  bool get isExpired => tanggalKadaluwarsa != null && tanggalKadaluwarsa!.isBefore(DateTime.now());
 
-  // Format display tanggal expired (bulan/tahun)
+  // Format display tanggal expired (bulan/tahun), atau '-' jika null
   String get expDisplay {
-    final m = tanggalKadaluwarsa.month.toString().padLeft(2, '0');
-    return 'EXP: $m/${tanggalKadaluwarsa.year}';
+    if (tanggalKadaluwarsa == null) return 'EXP: -';
+    final m = tanggalKadaluwarsa!.month.toString().padLeft(2, '0');
+    return 'EXP: $m/${tanggalKadaluwarsa!.year}';
   }
 
   // Buat salinan dengan field tertentu diganti
@@ -111,13 +113,13 @@ class ObatModel {
     return null;
   }
 
-  // Parse dynamic ke DateTime
-  static DateTime _parseDate(dynamic v) {
-    if (v == null) return DateTime.now();
+  // Parse dynamic ke DateTime nullable (null jika API tidak kirim)
+  static DateTime? _parseDate(dynamic v) {
+    if (v == null) return null;
     if (v is String && v.isNotEmpty) {
-      return DateTime.tryParse(v) ?? DateTime.now();
+      return DateTime.tryParse(v);
     }
-    return DateTime.now();
+    return null;
   }
 
   // Konversi ke JSON (key UPPERCASE)
@@ -127,7 +129,7 @@ class ObatModel {
       'ID_JENIS_OBAT': idJenisObat,
       'NAMA_OBAT': namaObat,
       'STOK': stok,
-      'TANGGAL_KADALUWARSA': tanggalKadaluwarsa.toIso8601String().split('T').first,
+      'TANGGAL_KADALUWARSA': tanggalKadaluwarsa?.toIso8601String().split('T').first,
       'HARGA_BELI': hargaBeli,
       'HARGA_JUAL': hargaJual,
     };
@@ -139,7 +141,7 @@ class ObatModel {
       'ID_JENIS_OBAT': idJenisObat,
       'NAMA_OBAT': namaObat,
       'STOK': stok,
-      'TANGGAL_KADALUWARSA': tanggalKadaluwarsa.toIso8601String().split('T').first,
+      'TANGGAL_KADALUWARSA': tanggalKadaluwarsa?.toIso8601String().split('T').first,
       'HARGA_BELI': hargaBeli,
       'HARGA_JUAL': hargaJual,
     };

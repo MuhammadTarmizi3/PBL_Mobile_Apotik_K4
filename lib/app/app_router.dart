@@ -119,7 +119,7 @@ GoRouter createAppRouter(AuthProvider authProvider) => GoRouter(
   ],
 );
 
-// Extension navigasi — shortcut ke home page sesuai role user
+// Extension navigasi shortcut ke home page sesuai role user
 extension Navigation on BuildContext {
   void goToRoleHome(String role) {
     if (role == 'admin') {

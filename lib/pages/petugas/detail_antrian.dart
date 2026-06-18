@@ -1,4 +1,4 @@
-﻿// Halaman detail antrian — info pasien, status, dan aksi panggil/selesai
+// Halaman detail antrian — info pasien, status, dan aksi panggil/selesai
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
@@ -63,7 +63,7 @@ class _DetailAntrianPageState extends State<DetailAntrianPage> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // â”€â”€ LAPISAN BAWAH: Scaffold utama â”€â”€
+        // ---- LAPISAN BAWAH: Scaffold utama ----
         Scaffold(
       backgroundColor: AppColors.backgroundMint,
       appBar: const CustomAppBar(
@@ -72,7 +72,7 @@ class _DetailAntrianPageState extends State<DetailAntrianPage> {
         backgroundColor: Colors.white,
       ),
 
-      // â”€â”€ TOMBOL BAWAH (SELESAIKAN) â€” sticky di bawah layar â”€â”€
+      // ---- TOMBOL BAWAH (SELESAIKAN) -- sticky di bawah layar ----
       bottomNavigationBar: _berhasil
           ? null
           : Container(
@@ -123,13 +123,13 @@ class _DetailAntrianPageState extends State<DetailAntrianPage> {
         ),
       ),
 
-      // â”€â”€ KONTEN UTAMA â”€â”€
+      // ---- KONTEN UTAMA ----
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // â”€â”€ KARTU HEADER PASIEN â”€â”€
+            // ---- KARTU HEADER PASIEN ----
             // Menampilkan nomor antrian, nama pasien, dan ID resep
             Container(
               padding: const EdgeInsets.all(16),
@@ -178,7 +178,7 @@ class _DetailAntrianPageState extends State<DetailAntrianPage> {
 
             const SizedBox(height: 24),
 
-            // â”€â”€ LABEL STATUS â”€â”€
+            // ---- LABEL STATUS ----
             const Text(
               'Status',
               style: TextStyle(
@@ -197,7 +197,7 @@ class _DetailAntrianPageState extends State<DetailAntrianPage> {
 
             const SizedBox(height: 24),
 
-            // â”€â”€ DETAIL RESEP â”€â”€
+            // ---- DETAIL RESEP ----
             const Text(
               'Detail',
               style: TextStyle(
@@ -257,7 +257,7 @@ class _DetailAntrianPageState extends State<DetailAntrianPage> {
       ),
     ),
 
-        // â”€â”€ LAPISAN ATAS: Overlay sukses â”€â”€
+        // ---- LAPISAN ATAS: Overlay sukses ----
         if (_berhasil)
           SuccessOverlay(
             message: 'ANTRIAN ${antrian.namaPasien}\nSELESAI DILAYANI',
