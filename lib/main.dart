@@ -1,4 +1,5 @@
 ﻿// Entry point aplikasi apotek — setup providers, routing, dan tema
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -55,6 +56,10 @@ class _MyAppState extends State<MyApp> {
         theme: AppTheme.lightTheme,
         // Router dari go_router dengan auth refresh
         routerConfig: _router,
+        // Izinkan mouse drag untuk scroll di web (Chrome)
+        scrollBehavior: const MaterialScrollBehavior().copyWith(
+          dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse, PointerDeviceKind.trackpad},
+        ),
       ),
     );
   }

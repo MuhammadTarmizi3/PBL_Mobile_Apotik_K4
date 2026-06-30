@@ -25,6 +25,13 @@ class ObatApotek {
   // True jika obat sudah kadaluarsa (tanggal lewat dari hari ini)
   bool get isExpired => tanggalKadaluwarsa != null && tanggalKadaluwarsa!.isBefore(DateTime.now());
 
+  // True jika obat akan kadaluwarsa dalam 90 hari (belum expired tapi sudah dekat)
+  bool get isExpiringSoon {
+    if (tanggalKadaluwarsa == null) return false;
+    final diff = tanggalKadaluwarsa!.difference(DateTime.now()).inDays;
+    return diff <= 90 && diff >= 0;
+  }
+
   // Parse dari JSON API (key UPPERCASE, untuk UI state penyerahan resep)
   factory ObatApotek.fromJson(Map<String, dynamic> json) {
     // Resolve nama jenis obat dari nested eager load

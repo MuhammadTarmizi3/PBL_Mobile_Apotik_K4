@@ -111,28 +111,20 @@ class ObatProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Tambah obat baru (API atau local fallback)
-  Future<void> addObat(ObatModel obat) async {
+  // Tambah obat baru ke list lokal (API call sudah dilakukan di halaman tambah_obat)
+  // fetchObat() yang dipanggil setelahnya akan sinkronisasi data dari API
+  void addObat(ObatModel obat) {
     if (_isTestMode || !ApiConstants.apotikApiEnabled) {
       final newId = _obatList.isEmpty
           ? 1
           : _obatList.map((o) => o.idObat).reduce((a, b) => a > b ? a : b) + 1;
       _obatList.insert(0, obat.copyWith(idObat: newId));
-      _filterObat();
-      notifyListeners();
-      return;
+    } else {
+      // Insert langsung — obat sudah di-create di API oleh halaman tambah
+      _obatList.insert(0, obat);
     }
-
-    try {
-      final newObat = await _obatService.createObat(obat);
-      _obatList.insert(0, newObat);
-      _filterObat();
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-      notifyListeners();
-      rethrow;
-    }
+    _filterObat();
+    notifyListeners();
   }
 
   // Update data obat

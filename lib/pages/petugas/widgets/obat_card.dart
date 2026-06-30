@@ -34,6 +34,7 @@ class ObatCard extends StatelessWidget {
     final bool belumDiambil = obat.belumDiambil;
     final bool atMax = resepMax != null && jumlahDiambil >= resepMax!;
     final bool expired = obat.isExpired;
+    final bool expiringSoon = !expired && obat.isExpiringSoon;
     final bool notInResep = resepMax == null;
     final bool plusDisabled = atMax || expired || notInResep;
 
@@ -107,7 +108,7 @@ class ObatCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.calendar_today_outlined, size: 12, color: expired ? AppColors.pureRed : AppColors.textMuted),
+              Icon(Icons.calendar_today_outlined, size: 12, color: expired ? AppColors.pureRed : (expiringSoon ? Colors.orange : AppColors.textMuted)),
               const SizedBox(width: 5),
               Text(
                 obat.tanggalKadaluwarsa != null
@@ -116,8 +117,8 @@ class ObatCard extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 12,
-                  fontWeight: expired ? FontWeight.w600 : FontWeight.w400,
-                  color: expired ? AppColors.pureRed : AppColors.textMuted,
+                  fontWeight: (expired || expiringSoon) ? FontWeight.w600 : FontWeight.w400,
+                  color: expired ? AppColors.pureRed : (expiringSoon ? Colors.orange : AppColors.textMuted),
                 ),
               ),
               if (expired) ...[
@@ -135,6 +136,26 @@ class ObatCard extends StatelessWidget {
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: AppColors.pureRed,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+              if (!expired && expiringSoon) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'SEGERA KADALUARSA',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.orange,
                       letterSpacing: 0.5,
                     ),
                   ),

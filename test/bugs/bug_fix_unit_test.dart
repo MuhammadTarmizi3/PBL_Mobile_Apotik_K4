@@ -232,7 +232,7 @@ void main() {
         hargaBeli: 1000,
         hargaJual: 2000,
       );
-      await provider.addObat(obatBaru);
+      provider.addObat(obatBaru);
 
       expect(provider.obatList.length, equals(jumlahAwal + 1));
       print('✓ Regression: addObat() masih berfungsi');
